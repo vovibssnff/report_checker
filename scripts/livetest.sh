@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-BASE_URL="${BASE_URL:-https://localhost}"
-BACKEND_URL="${BACKEND_URL:-http://backend:8000}"
-# Allow self-signed certs when using HTTPS (e.g. Caddy local_certs)
+BASE_URL="${BASE_URL:-https://192.168.122.71}"
 case "$BASE_URL" in https://*) CURL_EXTRA="-k" ;; *) CURL_EXTRA="" ;; esac
-MINIO_ENDPOINT="${MINIO_ENDPOINT:-localhost:9000}"
-MINIO_ACCESS="${MINIO_ACCESS:-minioadmin}"
-MINIO_SECRET="${MINIO_SECRET:-minioadmin}"
+
+MINIO_ENDPOINT="${MINIO_ENDPOINT:-}"
+MINIO_ACCESS="${MINIO_ACCESS:-}"
+MINIO_SECRET="${MINIO_SECRET:-}"
 BUCKET="report-checker-documents"
 
 RED='\033[0;31m'
@@ -45,6 +44,14 @@ for f in "$TEST_PDF_REPORT" "$TEST_PDF_VKR"; do
     fi
 done
 
+TOTAL_TESTS=10
+if [ -n "$MINIO_ENDPOINT" ] && [ -n "$MINIO_ACCESS" ] && [ -n "$MINIO_SECRET" ]; then
+    RUN_MINIO=true
+else
+    RUN_MINIO=false
+    TOTAL_TESTS=9
+fi
+
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
 COOKIE_JAR="$TMPDIR/cookies.txt"
@@ -53,50 +60,36 @@ echo ""
 echo -e "${BOLD}${CYAN}╔══════════════════════════════════════════╗${NC}"
 echo -e "${BOLD}${CYAN}║     Report Checker — Live Test Suite     ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
-echo -e "  Target (Caddy): ${BOLD}$BASE_URL${NC}"
-echo -e "  Backend direct: ${BOLD}$BACKEND_URL${NC}"
+echo -e "  Target: ${BOLD}$BASE_URL${NC}"
+if $RUN_MINIO; then
+    echo -e "  MinIO:  ${BOLD}$MINIO_ENDPOINT${NC}"
+else
+    echo -e "  MinIO:  ${YELLOW}skipped (set MINIO_ENDPOINT, MINIO_ACCESS, MINIO_SECRET to enable)${NC}"
+fi
 echo ""
 
+T=1
+
 # ─── 1. Health check via Caddy ───────────────────────────────────
-echo -e "${YELLOW}[1/11] Health check (Caddy → backend)${NC}"
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Health check (Caddy → backend)${NC}"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" "$BASE_URL/health" 2>&1)
 body=$(echo "$resp" | sed '$d')
 code=$(echo "$resp" | tail -1)
 check "GET /health" 200 "$code" "$body"
 echo ""
+T=$((T + 1))
 
-# ─── 2. Health check directly ────────────────────────────────────
-echo -e "${YELLOW}[2/11] Health check (backend direct inside container)${NC}"
-resp=$(docker compose exec -T backend python - <<'PY'
-import sys
-import urllib.request
-
-url = "http://localhost:8000/health"
-try:
-    with urllib.request.urlopen(url, timeout=5) as r:
-        body = r.read().decode("utf-8", errors="replace")
-        sys.stdout.write(body.rstrip("\n") + "\n")
-        sys.stdout.write(str(r.getcode()) + "\n")
-except Exception as e:
-    sys.stdout.write(str(e) + "\n")
-    sys.stdout.write("0\n")
-PY
-)
-body=$(echo "$resp" | sed '$d')
-code=$(echo "$resp" | tail -1)
-check "GET /health (direct inside container)" 200 "$code" "$body"
-echo ""
-
-# ─── 3. Unauthenticated access should be rejected ────────────────
-echo -e "${YELLOW}[3/11] Auth gate — reject unauthenticated request${NC}"
+# ─── 2. Unauthenticated access should be rejected ────────────────
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Auth gate — reject unauthenticated request${NC}"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" "$BASE_URL/api/v1/auth/me" 2>&1)
 body=$(echo "$resp" | sed '$d')
 code=$(echo "$resp" | tail -1)
 check "GET /api/v1/auth/me (no cookie)" 401 "$code" "$body"
 echo ""
+T=$((T + 1))
 
-# ─── 4. Dev login ────────────────────────────────────────────────
-echo -e "${YELLOW}[4/11] Auth — dev login${NC}"
+# ─── 3. Dev login ────────────────────────────────────────────────
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Auth — dev login${NC}"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" -c "$COOKIE_JAR" \
     -X POST "$BASE_URL/api/v1/auth/dev/login" \
     -H "Content-Type: application/json" \
@@ -107,17 +100,19 @@ check "POST /api/v1/auth/dev/login" 200 "$code" "$body"
 USER_NAME=$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('name','?'))" 2>/dev/null || echo "?")
 echo -e "         Logged in as: ${BOLD}$USER_NAME${NC}"
 echo ""
+T=$((T + 1))
 
-# ─── 5. Authenticated /me ────────────────────────────────────────
-echo -e "${YELLOW}[5/11] Auth — verify session${NC}"
+# ─── 4. Authenticated /me ────────────────────────────────────────
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Auth — verify session${NC}"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" -b "$COOKIE_JAR" "$BASE_URL/api/v1/auth/me" 2>&1)
 body=$(echo "$resp" | sed '$d')
 code=$(echo "$resp" | tail -1)
 check "GET /api/v1/auth/me (with cookie)" 200 "$code" "$body"
 echo ""
+T=$((T + 1))
 
-# ─── 6. Internal API: upload practice report PDF (no auth) ───────
-echo -e "${YELLOW}[6/11] Internal API — upload practice report (no auth)${NC}"
+# ─── 5. Internal API: upload practice report PDF (no auth) ───────
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Internal API — upload practice report (no auth)${NC}"
 echo -e "         File: $(basename "$TEST_PDF_REPORT")"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" \
     -X POST "$BASE_URL/internal/documents/" \
@@ -141,9 +136,10 @@ else
     echo "  $body"
 fi
 echo ""
+T=$((T + 1))
 
-# ─── 6b. Internal API: upload VKR template PDF (no auth) ─────────
-echo -e "${YELLOW}[6b/11] Internal API — upload VKR template (no auth)${NC}"
+# ─── 5b. Internal API: upload VKR template PDF (no auth) ─────────
+echo -e "${YELLOW}[${T}b/$TOTAL_TESTS] Internal API — upload VKR template (no auth)${NC}"
 echo -e "         File: $(basename "$TEST_PDF_VKR")"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" \
     -X POST "$BASE_URL/internal/documents/" \
@@ -167,10 +163,11 @@ else
     echo "  $body2"
 fi
 echo ""
+T=$((T + 1))
 
-# ─── 7. Internal API: get check results for practice report ──────
+# ─── 6. Internal API: get check results for practice report ──────
 if [ -n "$DOC_ID" ]; then
-    echo -e "${YELLOW}[7/11] Internal API — fetch check results (practice report)${NC}"
+    echo -e "${YELLOW}[$T/$TOTAL_TESTS] Internal API — fetch check results (practice report)${NC}"
     resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" "$BASE_URL/internal/documents/$DOC_ID/checks" 2>&1)
     body=$(echo "$resp" | sed '$d')
     code=$(echo "$resp" | tail -1)
@@ -179,13 +176,14 @@ if [ -n "$DOC_ID" ]; then
     echo -e "         Results returned: ${BOLD}$RESULT_COUNT${NC}"
     echo ""
 else
-    echo -e "${YELLOW}[7/11] SKIPPED — no document ID${NC}"
+    echo -e "${YELLOW}[$T/$TOTAL_TESTS] SKIPPED — no document ID${NC}"
     echo ""
 fi
+T=$((T + 1))
 
-# ─── 8. Web API: download document (proves MinIO round-trip) ─────
+# ─── 7. Web API: download document (proves MinIO round-trip) ─────
 if [ -n "$DOC_ID" ]; then
-    echo -e "${YELLOW}[8/11] Web API — download practice report (proves MinIO works)${NC}"
+    echo -e "${YELLOW}[$T/$TOTAL_TESTS] Web API — download practice report (proves MinIO works)${NC}"
     DOWNLOAD_FILE="$TMPDIR/downloaded.pdf"
     http_code=$(curl $CURL_EXTRA -s -w "%{http_code}" -b "$COOKIE_JAR" \
         -o "$DOWNLOAD_FILE" \
@@ -203,15 +201,16 @@ if [ -n "$DOC_ID" ]; then
     fi
     echo ""
 else
-    echo -e "${YELLOW}[8/11] SKIPPED — no document ID${NC}"
+    echo -e "${YELLOW}[$T/$TOTAL_TESTS] SKIPPED — no document ID${NC}"
     echo ""
 fi
+T=$((T + 1))
 
-# ─── 9. Direct MinIO verification ────────────────────────────────
-if [ -n "$DOC_ID" ]; then
-    echo -e "${YELLOW}[9/11] MinIO — direct S3 object verification${NC}"
+# ─── 8. Direct MinIO verification (optional) ─────────────────────
+if $RUN_MINIO && [ -n "$DOC_ID" ]; then
+    echo -e "${YELLOW}[$T/$TOTAL_TESTS] MinIO — direct S3 object verification${NC}"
     MINIO_OK=$(python3 -c "
-import urllib.request, urllib.error, hmac, hashlib, datetime, sys
+import urllib.request, urllib.error, urllib.parse, hmac, hashlib, datetime, sys, re
 
 endpoint = 'http://$MINIO_ENDPOINT'
 access_key = '$MINIO_ACCESS'
@@ -256,7 +255,6 @@ try:
     resp = urllib.request.urlopen(req)
     body = resp.read().decode()
     if '<Key>' in body:
-        import re
         keys = re.findall(r'<Key>([^<]+)</Key>', body)
         for k in keys:
             print('FOUND:' + k)
@@ -278,13 +276,15 @@ except Exception as e:
         fail=$((fail + 1))
     fi
     echo ""
-else
-    echo -e "${YELLOW}[9/11] SKIPPED — no document ID${NC}"
+    T=$((T + 1))
+elif $RUN_MINIO; then
+    echo -e "${YELLOW}[$T/$TOTAL_TESTS] SKIPPED — no document ID${NC}"
     echo ""
+    T=$((T + 1))
 fi
 
-# ─── 10. Web API: list documents (both uploads visible) ──────────
-echo -e "${YELLOW}[10/11] Web API — list documents (verify both uploads)${NC}"
+# ─── 9. Web API: list documents (both uploads visible) ───────────
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Web API — list documents (verify both uploads)${NC}"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" -b "$COOKIE_JAR" "$BASE_URL/api/v1/documents/?size=50" 2>&1)
 body=$(echo "$resp" | sed '$d')
 code=$(echo "$resp" | tail -1)
@@ -292,9 +292,10 @@ check "GET /api/v1/documents/" 200 "$code" "$body"
 TOTAL=$(echo "$body" | python3 -c "import sys,json; print(json.load(sys.stdin).get('total','?'))" 2>/dev/null || echo "?")
 echo -e "         Total documents in DB: ${BOLD}$TOTAL${NC}"
 echo ""
+T=$((T + 1))
 
-# ─── 11. Logout ──────────────────────────────────────────────────
-echo -e "${YELLOW}[11/11] Auth — logout${NC}"
+# ─── 10. Logout ──────────────────────────────────────────────────
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Auth — logout${NC}"
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
     -X POST "$BASE_URL/api/v1/auth/logout" 2>&1)
 code=$(echo "$resp" | tail -1)
