@@ -7,6 +7,10 @@
 
 {{ caddy_domain }} {
 {% else %}
+{
+	default_sni {{ ansible_host }}
+}
+
 https://{{ ansible_host }} {
 	tls internal
 {% endif %}
