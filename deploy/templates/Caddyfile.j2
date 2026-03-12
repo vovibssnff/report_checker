@@ -7,11 +7,7 @@
 
 {{ caddy_domain }} {
 {% else %}
-{
-	local_certs
-}
-
-:443 {
+https://{{ ansible_host }} {
 	tls internal
 {% endif %}
 
@@ -28,6 +24,6 @@
 
 {% if caddy_domain | default('') | length == 0 %}
 :80 {
-	redir https://{host}{uri} permanent
+	redir https://{{ ansible_host }}{uri} permanent
 }
 {% endif %}
