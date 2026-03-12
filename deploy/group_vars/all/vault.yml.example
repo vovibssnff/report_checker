@@ -1,0 +1,20 @@
+# Copy to vault.yml and fill in real values, then encrypt:
+#   cp vault.yml.example vault.yml
+#   ansible-vault encrypt vault.yml
+
+vault_server_host: 1.2.3.4
+vault_deploy_user: deploy
+vault_ssh_key_path: ~/.ssh/id_ed25519
+
+vault_repo_url: https://github.com/YOUR_USER/report_checker.git
+
+vault_postgres_password: CHANGE_ME
+vault_minio_root_user: CHANGE_ME
+vault_minio_root_password: CHANGE_ME
+
+vault_jwt_secret_key: CHANGE_ME
+
+vault_auth_mode: dev
+vault_itmo_id_client_id: ""
+vault_itmo_id_client_secret: ""
+vault_itmo_id_redirect_uri: ""

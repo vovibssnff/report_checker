@@ -1,0 +1,21 @@
+{
+	local_certs
+}
+
+localhost {
+	tls internal
+
+	request_body {
+		max_size 55MB
+	}
+
+	reverse_proxy /api/* backend:8000
+	reverse_proxy /internal/* backend:8000
+	reverse_proxy /docs* backend:8000
+	reverse_proxy /openapi.json backend:8000
+	reverse_proxy /health backend:8000
+}
+
+:80 {
+	redir https://localhost{uri} permanent
+}

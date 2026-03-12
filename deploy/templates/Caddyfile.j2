@@ -1,0 +1,33 @@
+{% if caddy_domain | default('') | length > 0 %}
+{% if caddy_tls_email | default('') | length > 0 %}
+{
+	email {{ caddy_tls_email }}
+}
+{% endif %}
+
+{{ caddy_domain }} {
+{% else %}
+{
+	local_certs
+}
+
+:443 {
+	tls internal
+{% endif %}
+
+	request_body {
+		max_size {{ max_file_size_mb + 5 }}MB
+	}
+
+	reverse_proxy /api/* backend:8000
+	reverse_proxy /internal/* backend:8000
+	reverse_proxy /docs* backend:8000
+	reverse_proxy /openapi.json backend:8000
+	reverse_proxy /health backend:8000
+}
+
+{% if caddy_domain | default('') | length == 0 %}
+:80 {
+	redir https://{host}{uri} permanent
+}
+{% endif %}

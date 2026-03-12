@@ -1,0 +1,26 @@
+app_name: report-checker
+
+app_deploy_path: /opt/report-checker
+
+app_repo_url: "{{ vault_repo_url }}"
+app_repo_branch: master
+
+app_env: production
+app_log_level: INFO
+
+postgres_user: report_checker
+postgres_db_name: report_checker
+
+s3_bucket_name: report-checker-documents
+s3_region: us-east-1
+
+jwt_algorithm: HS256
+jwt_expire_minutes: 60
+
+max_file_size_mb: 50
+document_retention_days: 365
+
+auth_mode: "{{ vault_auth_mode }}"
+
+caddy_domain: ""
+caddy_tls_email: ""
