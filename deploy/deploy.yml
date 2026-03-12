@@ -30,6 +30,7 @@
         repo: "{{ app_repo_url }}"
         dest: "{{ app_deploy_path }}"
         version: "{{ app_repo_branch }}"
+        force: true
       no_log: true
 
     - name: Write backend environment file
