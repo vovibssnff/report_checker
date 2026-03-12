@@ -50,5 +50,10 @@ backend/alembic/versions/__pycache__/
 minio_data/
 postgres_data/
 
-# Ansible vault password file
+# Ansible
 deploy/.vault_pass
+deploy/group_vars/all/vault.yml
+deploy/collections/
+deploy/roles/
+*.retry
+.ansible/

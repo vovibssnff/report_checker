@@ -1,0 +1,80 @@
+---
+- name: Deploy Report Checker
+  hosts: all
+  become: true
+
+  pre_tasks:
+    - name: Verify Docker is available
+      ansible.builtin.command:
+        cmd: docker compose version
+      changed_when: false
+
+    - name: Install git
+      ansible.builtin.apt:
+        name: git
+        state: present
+        update_cache: true
+        cache_valid_time: 3600
+
+  tasks:
+    - name: Create application directory
+      ansible.builtin.file:
+        path: "{{ app_deploy_path }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Clone or update application repository
+      ansible.builtin.git:
+        repo: "{{ app_repo_url }}"
+        dest: "{{ app_deploy_path }}"
+        version: "{{ app_repo_branch }}"
+      no_log: true
+
+    - name: Write backend environment file
+      ansible.builtin.copy:
+        dest: "{{ app_deploy_path }}/backend/.env"
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          APP_NAME=report-checker-backend
+          ENV={{ app_env }}
+          LOG_LEVEL={{ app_log_level }}
+          POSTGRES_USER={{ postgres_user }}
+          POSTGRES_PASSWORD={{ vault_postgres_password }}
+          POSTGRES_DB={{ postgres_db_name }}
+          DATABASE_URL=postgresql+asyncpg://{{ postgres_user }}:{{ vault_postgres_password }}@postgres:5432/{{ postgres_db_name }}
+          MINIO_ROOT_USER={{ vault_minio_root_user }}
+          MINIO_ROOT_PASSWORD={{ vault_minio_root_password }}
+          S3_ENDPOINT_URL=http://minio:9000
+          S3_ACCESS_KEY={{ vault_minio_root_user }}
+          S3_SECRET_KEY={{ vault_minio_root_password }}
+          S3_BUCKET_NAME={{ s3_bucket_name }}
+          S3_REGION={{ s3_region }}
+          AUTH_MODE={{ auth_mode }}
+          ITMO_ID_CLIENT_ID={{ vault_itmo_id_client_id }}
+          ITMO_ID_CLIENT_SECRET={{ vault_itmo_id_client_secret }}
+          ITMO_ID_REDIRECT_URI={{ vault_itmo_id_redirect_uri }}
+          JWT_SECRET_KEY={{ vault_jwt_secret_key }}
+          JWT_ALGORITHM={{ jwt_algorithm }}
+          JWT_EXPIRE_MINUTES={{ jwt_expire_minutes }}
+          MAX_FILE_SIZE_MB={{ max_file_size_mb }}
+          DOCUMENT_RETENTION_DAYS={{ document_retention_days }}
+      no_log: true
+
+    - name: Template Caddyfile for TLS configuration
+      ansible.builtin.template:
+        src: templates/Caddyfile.j2
+        dest: "{{ app_deploy_path }}/caddy/Caddyfile"
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Build and deploy application stack
+      ansible.builtin.command:
+        cmd: docker compose up -d --build --force-recreate --pull always
+        chdir: "{{ app_deploy_path }}"
+      register: _up
+      changed_when: "'Started' in _up.stderr or 'Creating' in _up.stderr or 'Recreated' in _up.stderr"
