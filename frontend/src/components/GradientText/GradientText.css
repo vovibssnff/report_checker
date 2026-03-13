@@ -1,0 +1,20 @@
+.gradient-text {
+  background: linear-gradient(
+    90deg,
+    #9ca3af 0%,
+    #9ca3af 15%,
+    #000000 50%,
+    #9ca3af 85%,
+    #9ca3af 100%
+  );
+  background-size: 200% 100%;
+  animation: gradient-text-shimmer 1s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes gradient-text-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: 0% 0; }
+}

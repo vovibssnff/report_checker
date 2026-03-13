@@ -1,0 +1,184 @@
+{
+  "documents": [
+    {
+      "title": "Проектная декларация",
+      "pages": 24,
+      "status": "passed",
+      "createdAt": "2026-03-06T00:00:00.000Z",
+      "pdfUrl": "/test.pdf",
+      "author": "Иванов И.И.",
+      "docType": "masters",
+      "report": {
+        "checkDate": "2026-02-19 14:30:00",
+        "structure": {
+          "title": "report.structure",
+          "passed": 8,
+          "total": 10,
+          "items": [
+            { "label": "report.titlePage", "status": "passed" },
+            { "label": "report.toc", "status": "passed" },
+            { "label": "report.intro", "status": "passed" },
+            { "label": "report.sectionIndividualTask", "status": "failed", "detail": "report.notFound" },
+            { "label": "report.mainPart", "status": "passed" },
+            { "label": "report.conclusion", "status": "passed" },
+            { "label": "report.sourcesList", "status": "failed", "detail": "report.notFound" },
+            { "label": "report.appendices", "status": "passed" }
+          ]
+        },
+        "formatting": {
+          "title": "report.formatting",
+          "passed": 6,
+          "total": 8,
+          "items": [
+            { "label": "report.fontTimesNewRoman", "status": "passed" },
+            { "label": "report.fontSize14", "status": "passed" },
+            { "label": "report.paragraphIndent", "status": "failed", "detail": "report.indent08required125" },
+            { "label": "report.pagesWithViolations", "status": "failed", "detail": "report.pages3_5_7_12" },
+            { "label": "report.leftMargin3cm", "status": "passed" },
+            { "label": "report.lineSpacing", "status": "failed", "detail": "report.lineSpacing10required15" },
+            { "label": "report.pageNumbering", "status": "passed" }
+          ]
+        },
+        "content": {
+          "title": "report.content",
+          "passed": 2,
+          "total": 3,
+          "items": [
+            { "label": "report.firstPerson", "status": "passed", "detail": "report.detected" },
+            { "label": "report.minVolume", "status": "passed" },
+            { "label": "report.introSpecificity", "status": "warning", "detail": "report.intro70general" }
+          ]
+        },
+        "totalPassed": 16,
+        "totalChecks": 21,
+        "overallStatus": "report.statusRequiresRefinement"
+      }
+    },
+    {
+      "title": "Договор участия в ДС",
+      "pages": 18,
+      "status": "warnings",
+      "createdAt": "2026-03-06T00:00:00.000Z",
+      "pdfUrl": "/test.pdf",
+      "author": "Петрова А.С.",
+      "docType": "bachelors",
+      "report": {
+        "checkDate": "2026-02-19 14:30:00",
+        "structure": {
+          "title": "report.structure",
+          "passed": 8,
+          "total": 10,
+          "items": [
+            { "label": "report.titlePage", "status": "passed" },
+            { "label": "report.toc", "status": "passed" },
+            { "label": "report.intro", "status": "passed" },
+            { "label": "report.sectionIndividualTask", "status": "failed", "detail": "report.notFound" },
+            { "label": "report.mainPart", "status": "passed" },
+            { "label": "report.conclusion", "status": "passed" },
+            { "label": "report.sourcesList", "status": "failed", "detail": "report.notFound" },
+            { "label": "report.appendices", "status": "passed" }
+          ]
+        },
+        "formatting": {
+          "title": "report.formatting",
+          "passed": 6,
+          "total": 8,
+          "items": [
+            { "label": "report.fontTimesNewRoman", "status": "passed" },
+            { "label": "report.fontSize14", "status": "passed" },
+            { "label": "report.paragraphIndent", "status": "failed", "detail": "report.indent08required125" },
+            { "label": "report.pagesWithViolations", "status": "failed", "detail": "report.pages3_5_7_12" },
+            { "label": "report.leftMargin3cm", "status": "passed" },
+            { "label": "report.lineSpacing", "status": "failed", "detail": "report.lineSpacing10required15" },
+            { "label": "report.pageNumbering", "status": "passed" }
+          ]
+        },
+        "content": {
+          "title": "report.content",
+          "passed": 2,
+          "total": 3,
+          "items": [
+            { "label": "report.firstPerson", "status": "passed", "detail": "report.detected" },
+            { "label": "report.minVolume", "status": "passed" },
+            { "label": "report.introSpecificity", "status": "warning", "detail": "report.intro70general" }
+          ]
+        },
+        "totalPassed": 16,
+        "totalChecks": 21,
+        "overallStatus": "report.statusRequiresRefinement"
+      }
+    },
+    {
+      "title": "Акт приёма-передачи",
+      "pages": 6,
+      "status": "failed",
+      "createdAt": "2026-03-05T00:00:00.000Z",
+      "pdfUrl": "/test.pdf",
+      "author": "Сидоров К.В.",
+      "docType": "masters",
+      "report": {
+        "checkDate": "2026-02-19 14:30:00",
+        "structure": {
+          "title": "report.structure",
+          "passed": 8,
+          "total": 10,
+          "items": [
+            { "label": "report.titlePage", "status": "passed" },
+            { "label": "report.toc", "status": "passed" },
+            { "label": "report.intro", "status": "passed" },
+            { "label": "report.sectionIndividualTask", "status": "failed", "detail": "report.notFound" },
+            { "label": "report.mainPart", "status": "passed" },
+            { "label": "report.conclusion", "status": "passed" },
+            { "label": "report.sourcesList", "status": "failed", "detail": "report.notFound" },
+            { "label": "report.appendices", "status": "passed" }
+          ]
+        },
+        "formatting": {
+          "title": "report.formatting",
+          "passed": 6,
+          "total": 8,
+          "items": [
+            { "label": "report.fontTimesNewRoman", "status": "passed" },
+            { "label": "report.fontSize14", "status": "passed" },
+            { "label": "report.paragraphIndent", "status": "failed", "detail": "report.indent08required125" },
+            { "label": "report.pagesWithViolations", "status": "failed", "detail": "report.pages3_5_7_12" },
+            { "label": "report.leftMargin3cm", "status": "passed" },
+            { "label": "report.lineSpacing", "status": "failed", "detail": "report.lineSpacing10required15" },
+            { "label": "report.pageNumbering", "status": "passed" }
+          ]
+        },
+        "content": {
+          "title": "report.content",
+          "passed": 2,
+          "total": 3,
+          "items": [
+            { "label": "report.firstPerson", "status": "passed", "detail": "report.detected" },
+            { "label": "report.minVolume", "status": "passed" },
+            { "label": "report.introSpecificity", "status": "warning", "detail": "report.intro70general" }
+          ]
+        },
+        "totalPassed": 16,
+        "totalChecks": 21,
+        "overallStatus": "report.statusRequiresRefinement"
+      }
+    },
+    {
+      "title": "Технический план",
+      "pages": 14,
+      "status": "pending",
+      "createdAt": "2026-03-06T00:00:00.000Z",
+      "pdfUrl": "/test.pdf",
+      "author": "Козлова М.Д.",
+      "docType": "bachelors"
+    },
+    {
+      "title": "Выписка из ЕГРН",
+      "pages": 3,
+      "status": "pending",
+      "createdAt": "2026-03-05T00:00:00.000Z",
+      "pdfUrl": "/test.pdf",
+      "author": "Иванов И.И.",
+      "docType": "masters"
+    }
+  ]
+}

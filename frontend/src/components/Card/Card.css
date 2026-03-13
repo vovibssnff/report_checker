@@ -1,0 +1,23 @@
+.card {
+  position: relative;
+}
+
+.card:hover .source-tag, .active-card .source-tag {
+  outline-color: rgb(242 242 242);
+  background-color: rgb(255, 255, 255);
+}
+
+.card__meta,
+.card__description {
+  transition: opacity 0.15s ease;
+}
+
+.card--hover-delete .card__meta {
+  opacity: 0;
+}
+
+.card--hover-delete .card__delete-btn {
+  opacity: 1;
+  z-index: 10;
+  cursor: pointer;
+}

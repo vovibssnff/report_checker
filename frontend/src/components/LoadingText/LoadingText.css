@@ -1,0 +1,11 @@
+.loading-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  transition: opacity 0.25s ease;
+}
+
+.loading-text__loader {
+  flex-shrink: 0;
+  opacity: 0.85;
+}

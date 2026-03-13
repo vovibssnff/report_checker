@@ -1,0 +1,67 @@
+.input-field {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    &__label {
+        margin-bottom: 10px;
+        padding-left: 18px;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+    }
+
+    &__input {
+        padding: 14px 32px 14px 18px;
+        border: none;
+        border-radius: 3rem;
+        font-family: inherit;
+        width: 100%;
+        outline: 1px solid rgba(0, 0, 0, 0.1);
+
+        &:focus {
+            outline: 1px solid black;
+        }
+
+        &::placeholder {
+            color: rgba(0, 0, 0, 0.6);
+        }
+    }
+
+    &__wrapper {
+        position: relative;
+        width: 100%;
+    }
+
+    &__clear {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: fit-content;
+        height: fit-content;
+        padding: 0;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        transition: color 0.1s;
+        opacity: 0.8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover {
+            opacity: 1;
+        }
+    }
+
+    &__input[type="number"]::-webkit-inner-spin-button,
+    &__input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    &__input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+}

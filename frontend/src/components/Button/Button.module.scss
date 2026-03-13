@@ -1,0 +1,255 @@
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    width: fit-content;
+    transition: background .15s, color .15s;
+    border-radius: 3rem;
+    transition: opacity .15s;
+
+    &__icon {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1px;
+    }
+
+    &__text {
+        display: block;
+    }
+
+    &__pad {
+        height: 100%;
+
+        &--xs {
+            width: 3px;
+        }
+
+        &--s {
+            width: 3px;
+        }
+
+        &--m {
+            width: 4px;
+        }
+
+        &--l {
+            width: 3px;
+        }
+
+        &--xl {
+            width: 5px;
+        }
+    }
+
+    &--xs {
+        padding: 8px 8px;
+        height: 30px;
+        font-size: 0.75rem;
+        margin-bottom: 0;
+    }
+
+    &--s {
+        padding: 11px 11px;
+        height: 36px;
+        font-size: 0.875rem;
+        margin-bottom: 0;
+    }
+
+    &--m {
+        padding: 13px 11px;
+        height: 44px;
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+
+    &--l {
+        padding: 17px 15px;
+        height: 52px;
+        font-size: 1rem;
+        margin-bottom: 0;
+    }
+
+    &--xl {
+        padding: 21px 22px;
+        height: 60px;
+        font-size: 1.125rem;
+        margin-bottom: 0;
+    }
+
+
+    &--primary--default {
+        background: #141414;
+        color: #fff;
+
+        &:hover {
+            background: #1F1F1F;
+        }
+
+        &:active {
+            background: #141414;
+        }
+    }
+
+    &--primary--green {
+        background: #02D15C;
+        color: #fff;
+
+        &:hover {
+            background: #00C257;
+        }
+
+        &:active {
+            background: #00B253;
+        }
+    }
+
+    &--primary--yellow {
+        background: #FFC300;
+        color: #fff;
+
+        &:hover {
+            background: #e5b000;
+        }
+
+        &:active {
+            background: #FFC300;
+        }
+    }
+
+    &--primary--red {
+        background: #FF4053;
+        color: #fff;
+
+        &:hover {
+            background: #F71B47;
+        }
+
+        &:active {
+            background: #E8003E;
+        }
+    }
+
+    &--primary--blue {
+        background: #00AAFF;
+        color: #fff;
+
+        &:hover {
+            background: #0099F7;
+        }
+
+        &:active {
+            background: #008AED;
+        }
+    }
+
+
+    &--secondary--default {
+        background: #F2F1F0;
+        color: #141414;
+
+        &:hover {
+            background: #EBEAE8;
+        }
+
+        &:active {
+            background: #E3E2E1;
+        }
+    }
+
+    &--secondary--green {
+        background: #02D15C;
+        color: #141414;
+
+        &:hover {
+            background: #00C257;
+        }
+
+        &:active {
+            background: #E3E2E1;
+        }
+    }
+
+    &--secondary--red {
+        background: #FF4053;
+        color: #141414;
+
+        &:hover {
+            background: #F71B47;
+        }
+
+        &:active {
+            background: #E3E2E1;
+        }
+    }
+
+    &--secondary--blue {
+        background: #00AAFF;
+        color: #141414;
+
+        &:hover {
+            background: #0099F7;
+        }
+
+        &:active {
+            background: #E3E2E1;
+        }
+    }
+
+    &--ghost--default {
+        background: transparent;
+        color: #141414;
+
+        &:hover,
+        &:active {
+            background: rgba(0, 0, 0, 0.08);
+        }
+    }
+
+    &--ghost--green {
+        background: transparent;
+        color: black;
+
+        &:hover,
+        &:active {
+            background: rgba(0, 0, 0, 0.08);
+        }
+    }
+
+    &--ghost--red {
+        background: transparent;
+        color: #FF4053;
+
+        &:hover,
+        &:active {
+            background: rgba(0, 0, 0, 0.08);
+        }
+    }
+
+    &--ghost--blue {
+        background: transparent;
+        color: #00AAFF;
+
+        &:hover,
+        &:active {
+            background: rgba(0, 0, 0, 0.08);
+        }
+    }
+
+    &--disabled {
+        opacity: 0.6;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+
+     &--full-width {
+        width: 100%;
+        min-width: fit-content;
+    }
+}
+
+.button.invisible {
+    opacity: 0;
+}
