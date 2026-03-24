@@ -8,6 +8,7 @@ export type DocType = 'masters' | 'bachelors';
 
 /** Документ для отображения в списке и модалке (с датой как объект Date) */
 export interface DocumentItem {
+  id?: string;
   title: string;
   pages: number;
   status: DocumentStatus;
@@ -20,6 +21,7 @@ export interface DocumentItem {
 
 /** Документ в формате JSON (createdAt — строка ISO для хранения/API) */
 export interface DocumentItemJson {
+  id?: string;
   title: string;
   pages: number;
   status: DocumentStatus;

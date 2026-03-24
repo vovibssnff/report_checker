@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError, jwt
 
+from app.adapters.driven.observability import get_logger, kv
 from app.config import settings
 
 if TYPE_CHECKING:
@@ -40,8 +41,10 @@ async def get_current_user(
     request: Request,
     auth_service: AuthUseCase = Depends(get_auth_service),
 ) -> User:
+    logger = get_logger(__name__)
     token = request.cookies.get("access_token")
     if not token:
+        logger.info("auth_missing_cookie %s", kv(path=request.url.path))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
@@ -49,8 +52,14 @@ async def get_current_user(
         if user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except JWTError as err:
+        logger.warning("auth_invalid_token %s", kv(path=request.url.path))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from err
-    return await auth_service.get_current_user(token)
+    try:
+        return await auth_service.get_current_user(token)
+    except ValueError as err:
+        # Stale/invalid token subject should be treated as unauthenticated, not 500.
+        logger.warning("auth_user_not_found %s", kv(path=request.url.path))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found") from err
 
 
 async def require_admin(

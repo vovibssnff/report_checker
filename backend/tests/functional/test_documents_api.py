@@ -33,7 +33,8 @@ async def test_upload_document(auth_client: httpx.AsyncClient, test_user):
     doc = body[0]
     assert doc["filename"] == "report.pdf"
     assert doc["document_type"] == "vkr_template"
-    assert doc["status"] == "pending"
+    # Upload runs checks inline; functional tests use a mock engine with no outputs → passed.
+    assert doc["status"] == "passed"
 
 
 async def test_upload_multiple_documents(auth_client: httpx.AsyncClient):

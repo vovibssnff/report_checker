@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import TYPE_CHECKING
 
 from sqlalchemy import select
@@ -15,10 +16,46 @@ if TYPE_CHECKING:
 
     from sqlalchemy.ext.asyncio import AsyncSession
 
+    from app.checkers.registry import RuleRegistry as RuleRegistryType
+
 
 class PgCheckRuleRepository(CheckRuleRepository):
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+
+    async def sync_from_registry(self, registry: RuleRegistryType) -> None:
+        """Upsert rows for every code-defined rule so checks have DB-backed toggles/config.
+
+        New rules are inserted enabled. Existing rows keep ``enabled`` and ``config``.
+        """
+        rules = registry.all_rules()
+        if not rules:
+            return
+        values = [
+            {
+                "id": uuid.uuid4(),
+                "code": r.code,
+                "document_type": r.document_type.value,
+                "name": r.name,
+                "description": r.description or "",
+                "enabled": True,
+                "config": None,
+            }
+            for r in rules
+        ]
+        stmt = insert(CheckRuleModel).values(values)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[CheckRuleModel.code],
+            set_={
+                "document_type": stmt.excluded.document_type,
+                "name": stmt.excluded.name,
+                "description": stmt.excluded.description,
+                "enabled": CheckRuleModel.enabled,
+                "config": CheckRuleModel.config,
+            },
+        )
+        await self._session.execute(stmt)
+        await self._session.flush()
 
     async def list(
         self,

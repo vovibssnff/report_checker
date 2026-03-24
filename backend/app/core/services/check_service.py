@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from time import perf_counter
 from typing import TYPE_CHECKING
 
+from app.adapters.driven.observability import get_logger, kv
 from app.core.domain.entities.check_result import CheckResult
 from app.core.domain.value_objects import (
     CheckResultId,
@@ -33,19 +35,35 @@ class CheckService(DocumentCheckUseCase):
         self._check_result_repo = check_result_repo
         self._storage = storage
         self._checker_engine = checker_engine
+        self._logger = get_logger(__name__)
 
     async def run_checks_for_document(self, document_id: DocumentId) -> list[CheckResult]:
+        started = perf_counter()
+        self._logger.info("check_pipeline_started %s", kv(document_id=document_id))
         doc = await self._doc_repo.get_by_id(document_id)
         doc.status = DocumentStatus.CHECKING
         await self._doc_repo.update(doc)
+        self._logger.info("document_status_updated %s", kv(document_id=document_id, status=doc.status))
 
+        download_started = perf_counter()
         chunks: list[bytes] = []
         stream = self._storage.download_file(doc.s3_key)
         async for chunk in stream:
             chunks.append(chunk)
         pdf_bytes = b"".join(chunks)
+        download_elapsed_ms = round((perf_counter() - download_started) * 1000, 2)
+        self._logger.info(
+            "document_downloaded %s",
+            kv(document_id=document_id, bytes_size=len(pdf_bytes), duration_ms=download_elapsed_ms),
+        )
 
+        checks_started = perf_counter()
         outputs = await self._checker_engine.run_checks(pdf_bytes, doc.document_type)
+        checks_elapsed_ms = round((perf_counter() - checks_started) * 1000, 2)
+        self._logger.info(
+            "checker_engine_completed %s",
+            kv(document_id=document_id, rules_count=len(outputs), duration_ms=checks_elapsed_ms),
+        )
 
         now = datetime.now(UTC)
         results: list[CheckResult] = []
@@ -65,6 +83,10 @@ class CheckService(DocumentCheckUseCase):
                 )
 
         saved = await self._check_result_repo.replace_for_document(document_id, results)
+        self._logger.info(
+            "check_results_replaced %s",
+            kv(document_id=document_id, persisted_count=len(saved)),
+        )
 
         has_error = any(r.status == CheckStatus.FAILED and r.severity == Severity.ERROR for r in saved)
         has_warning = any(r.status == CheckStatus.FAILED and r.severity == Severity.WARNING for r in saved)
@@ -78,6 +100,17 @@ class CheckService(DocumentCheckUseCase):
 
         doc.checked_at = now
         await self._doc_repo.update(doc)
+        total_elapsed_ms = round((perf_counter() - started) * 1000, 2)
+        self._logger.info(
+            "check_pipeline_completed %s",
+            kv(
+                document_id=document_id,
+                final_status=doc.status,
+                has_error=has_error,
+                has_warning=has_warning,
+                duration_ms=total_elapsed_ms,
+            ),
+        )
 
         return saved
 

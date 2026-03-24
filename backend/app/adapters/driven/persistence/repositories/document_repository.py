@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
+from app.adapters.driven.persistence.database.models.check_result import CheckResultModel
 from app.adapters.driven.persistence.database.models.document import DocumentModel
 from app.core.domain.entities.document import Document
 from app.core.domain.value_objects import (
@@ -91,6 +92,7 @@ class PgDocumentRepository(DocumentRepository):
         model = await self._session.get(DocumentModel, document_id)
         if model is None:
             raise ValueError(f"Document {document_id} not found")
+        await self._session.execute(delete(CheckResultModel).where(CheckResultModel.document_id == document_id))
         await self._session.delete(model)
         await self._session.flush()
 

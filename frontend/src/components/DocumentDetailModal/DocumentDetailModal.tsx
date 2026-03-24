@@ -6,7 +6,9 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import type { DocumentReport, ReportCheckStatus } from '../../types/documentReport';
+import { getDocument } from '../../api/documentApi';
 import { Spinner } from '../ui/spinner';
+import { mapCheckResultsToDocumentReport } from '../../utils/mapCheckResultsToDocumentReport';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
@@ -72,6 +74,7 @@ export interface DocumentDetailModalProps {
   status: ItemStatus;
   author?: string;
   pdfUrl?: string;
+  documentId?: string;
   report?: DocumentReport;
   transitionStartRect?: { left: number; top: number; width: number; height: number } | null;
   transitionPreviewImage?: string | null;  /** Вызов по окончании анимации перехода */
@@ -95,6 +98,10 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
       ? source
       : `${window.location.origin}${source.startsWith('/') ? '' : '/'}${source}`
     : null;
+  const [pdfObjectUrl, setPdfObjectUrl] = useState<string | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [computedReport, setComputedReport] = useState<DocumentReport | undefined>(props.report);
 
   useEffect(() => {
     if (!props.open || !containerRef.current || !hasPdf) return;
@@ -113,8 +120,89 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
       setCurrentPage(1);
       setTargetRect(null);
       setRevealPreviewBeforeUnmount(false);
+      setReportLoading(false);
+      setReportError(null);
+      setComputedReport(props.report);
+      if (pdfObjectUrl) {
+        URL.revokeObjectURL(pdfObjectUrl);
+        setPdfObjectUrl(null);
+      }
     }
-  }, [props.open]);
+  }, [props.open, pdfObjectUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Ensure cookies/auth are included when loading via react-pdf.
+    if (!props.open || !props.pdfUrl) {
+      setPdfObjectUrl(null);
+      return;
+    }
+
+    const absUrl = fileUrl;
+    if (!absUrl) return;
+
+    (async () => {
+      try {
+        const res = await fetch(absUrl, { credentials: 'include' });
+        const blob = await res.blob();
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        setPdfObjectUrl((prev) => {
+          if (prev) URL.revokeObjectURL(prev);
+          return url;
+        });
+      } catch {
+        // Leave pdfObjectUrl null; Document will show its `error` renderer.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [props.open, props.pdfUrl, fileUrl]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!props.open) return;
+
+    // If a precomputed report is provided, prefer it.
+    if (props.report) {
+      setComputedReport(props.report);
+      setReportLoading(false);
+      setReportError(null);
+      return;
+    }
+
+    if (!props.documentId) {
+      setComputedReport(undefined);
+      setReportLoading(false);
+      setReportError(null);
+      return;
+    }
+
+    setReportLoading(true);
+    setReportError(null);
+
+    (async () => {
+      try {
+        const detail = await getDocument(props.documentId!);
+        if (cancelled) return;
+        setComputedReport(mapCheckResultsToDocumentReport(detail));
+      } catch (e) {
+        if (cancelled) return;
+        setComputedReport(undefined);
+        setReportError(e instanceof Error ? e.message : 'Failed to load report');
+      } finally {
+        if (cancelled) return;
+        setReportLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [props.open, props.documentId, props.report]);
 
   useEffect(() => {
     if (!props.open || !isTransitioning) return;
@@ -164,6 +252,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
 
   const startRect = props.transitionStartRect ?? null;
   const showFlyout = isTransitioning && startRect;
+  const reportToShow = computedReport ?? props.report;
 
   return (
     <AnimatePresence>
@@ -271,7 +360,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                             </div>
                           )}
                           <Document
-                            file={fileUrl}
+                            file={pdfObjectUrl ?? fileUrl}
                             loading={
                               <div className="absolute inset-0 flex items-center justify-center">
                                 <Spinner className="size-8 text-gray-400" />
@@ -333,9 +422,9 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                             <span className="font-medium text-sm text-gray-900">
                               {t(statusKeys[props.status].labelKey)}
                             </span>
-                            {props.report?.checkDate && (
+                            {reportToShow?.checkDate && (
                               <span className="text-xs text-gray-600">
-                                {t('report.checkDate')} {formatCheckDateAndTime(props.report.checkDate, i18n.language)}
+                                {t('report.checkDate')} {formatCheckDateAndTime(reportToShow.checkDate, i18n.language)}
                               </span>
                             )}
                           </div>
@@ -347,9 +436,13 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
 
                 <div className="h-px w-full bg-[rgba(0,0,0,0.05)]" />
 
-                {props.report ? (
+                {reportLoading ? (
+                  <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                    <Spinner className="size-5 opacity-70" />
+                  </div>
+                ) : reportToShow ? (
                   <div className="flex flex-col gap-4">
-                    {[props.report.structure, props.report.formatting, props.report.content].map((section) => (
+                    {[reportToShow.structure, reportToShow.formatting, reportToShow.content].map((section) => (
                       <div>
                         <div className='flex items-center justify-between'>
                           <div className="pb-2 pt-4 text-sm uppercase">
@@ -388,7 +481,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
-                    {t('report.noReport')}
+                    {reportError ? reportError : t('report.noReport')}
                   </div>
                 )}
               </div>

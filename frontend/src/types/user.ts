@@ -3,22 +3,14 @@ export interface User {
   email: string;
   name: string;
   organization?: string;
+  role?: string;
 }
 
-export interface LoginPayload {
-  email: string;
-  password: string;
-}
-
-export interface RegisterPayload {
+export interface DevLoginPayload {
   email: string;
   name: string;
-  password: string;
 }
 
-export interface AuthResponse {
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
-  user: User;
+export interface DevLogoutPayload {
+  // reserved for future compatibility; backend uses cookie-based logout
 }

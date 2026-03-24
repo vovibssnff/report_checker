@@ -1,8 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import type { User } from '../types/user';
-import type { LoginPayload, RegisterPayload } from '../types/user';
+import type { DevLoginPayload } from '../types/user';
 import * as authApi from '../api/authApi';
-import { clearStoredRefreshToken, clearStoredToken, getStoredToken, setStoredRefreshToken, setStoredToken } from '../api/client';
 
 export class AuthStore {
   user: User | null = null;
@@ -21,15 +20,13 @@ export class AuthStore {
     this.user = user;
   };
 
-  login = async (payload: LoginPayload) => {
+  login = async (payload: DevLoginPayload) => {
     this.loading = true;
     this.error = null;
     try {
-      const res = await authApi.login(payload);
-      setStoredToken(res.access_token);
-      setStoredRefreshToken(res.refresh_token);
+      const user = await authApi.devLogin(payload);
       runInAction(() => {
-        this.user = res.user;
+        this.user = user;
         this.loading = false;
       });
     } catch (e) {
@@ -41,33 +38,7 @@ export class AuthStore {
     }
   };
 
-  register = async (payload: RegisterPayload) => {
-    this.loading = true;
-    this.error = null;
-    try {
-      const res = await authApi.register(payload);
-      if (res.access_token) {
-        setStoredToken(res.access_token);
-        if (res.refresh_token) setStoredRefreshToken(res.refresh_token);
-      }
-      runInAction(() => {
-        this.user = res.user;
-        this.loading = false;
-      });
-    } catch (e) {
-      runInAction(() => {
-        this.error = e instanceof Error ? e.message : 'Registration failed';
-        this.loading = false;
-      });
-      throw e;
-    }
-  };
-
   fetchMe = async () => {
-    if (!getStoredToken()) {
-      runInAction(() => { this.user = null; });
-      return;
-    }
     this.loading = true;
     try {
       const user = await authApi.fetchMe();
@@ -80,20 +51,18 @@ export class AuthStore {
         this.user = null;
         this.loading = false;
       });
-      clearStoredToken();
-      clearStoredRefreshToken();
     }
   };
 
   logout = async () => {
     this.error = null;
+    this.loading = true;
     try {
       await authApi.logout();
     } finally {
-      clearStoredToken();
-      clearStoredRefreshToken();
       runInAction(() => {
         this.user = null;
+        this.loading = false;
       });
     }
   };

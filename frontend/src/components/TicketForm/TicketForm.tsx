@@ -3,14 +3,13 @@ import { observer } from 'mobx-react-lite';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { Search, ChevronDown } from 'lucide-react';
-import { ticketStore } from '../../store/ticketStore';
 import useEmblaCarousel from 'embla-carousel-react';
 import Button from '../Button/Button';
 import CrossIcon from '../icons/CrossIcon/CrossIcon';
 import ItemCard from '../ItemCard/ItemCard';
 import DocumentDetailModal from '../DocumentDetailModal/DocumentDetailModal';
 import type { DocumentItem, DocumentStatus, DocType } from '../../types/document';
-import { documentsList } from '../../data';
+import { documentsStore } from '../../store/documentsStore';
 
 const PDF_ACCEPT = '.pdf,application/pdf';
 
@@ -177,11 +176,17 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
     return () => document.removeEventListener('mousedown', handler);
   }, [docTypeOpen]);
 
-  const readinessCounts = countByReadiness(documentsList);
-  const statusCounts = countByStatus(documentsList);
-  const filteredCards = applyFilters(documentsList, readinessFilter, statusFilter, authorSearch, docTypeFilter);
+  useEffect(() => {
+    const backendDocumentType =
+      docTypeFilter === 'bachelors' ? 'practice_report' : docTypeFilter === 'masters' ? 'vkr_template' : undefined;
+    documentsStore.loadDocuments({ backendDocumentType });
+  }, [docTypeFilter]);
 
-  const { createTicket, creatingTicket } = ticketStore;
+  const readinessCounts = countByReadiness(documentsStore.documents);
+  const statusCounts = countByStatus(documentsStore.documents);
+  const filteredCards = applyFilters(documentsStore.documents, readinessFilter, statusFilter, authorSearch, docTypeFilter);
+
+  const uploading = documentsStore.uploading;
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
@@ -243,11 +248,11 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedFile || creatingTicket) return;
+    if (!selectedFile || uploading) return;
     try {
-      await createTicket({
-        question: selectedFile.name,
-      });
+      const backendDocumentType =
+        docTypeFilter === 'bachelors' ? 'practice_report' : 'vkr_template';
+      await documentsStore.uploadDocument(selectedFile, backendDocumentType);
       setSelectedFile(null);
     } catch {
       // keep file on error
@@ -265,8 +270,8 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
               <div className="flex flex-col h-full px-5 relative overflow-y-auto no-scrollbar">
                 <div className="flex flex-col gap-1 shrink-0 pb-8 sticky top-0 w-full bg-linear-to-b from-90% from-white to-transparent z-10 px-5">
                   <h1 className="text-2xl pb-4">
-                    {t('documents.checkedOfTotal', { checked: readinessCounts.checked, total: documentsList.length })}{' '}
-                    {pluralDocuments(documentsList.length, t).replace(/^\d+\s/, '')}
+                    {t('documents.checkedOfTotal', { checked: readinessCounts.checked, total: documentsStore.documents.length })}{' '}
+                    {pluralDocuments(documentsStore.documents.length, t).replace(/^\d+\s/, '')}
                   </h1>
 
                   <div className="flex flex-row gap-4 overflow-x-auto no-scrollbar">
@@ -435,11 +440,11 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                       </button>
                       <Button
                         type="submit"
-                        disabled={creatingTicket}
+                        disabled={uploading}
                         size="m"
                         className="shrink-0 transition-all duration-150 relative z-0"
                       >
-                        {creatingTicket ? t('tickets.working') : t('tickets.send')}
+                        {uploading ? t('tickets.working') : t('tickets.send')}
                       </Button>
                     </>
                   )}
@@ -484,6 +489,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
       <DocumentDetailModal
         open={selectedCard !== null}
         onClose={handleCloseModal}
+        documentId={selectedCard?.id}
         title={selectedCard?.title ?? ''}
         typeLabel={selectedCard ? t(`documents.${selectedCard.docType}`) : ''}
         pages={selectedCard?.pages ?? 0}

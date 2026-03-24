@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from time import perf_counter
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 from uuid import UUID
@@ -8,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 
+from app.adapters.driven.observability import get_logger, kv
 from app.adapters.driving.web.dependencies import (
     get_check_service,
     get_current_user,
@@ -29,6 +31,7 @@ if TYPE_CHECKING:
     from app.core.ports.driving.document_uploading import DocumentUploadUseCase
 
 router = APIRouter(prefix="/documents", tags=["documents"])
+logger = get_logger(__name__)
 
 
 def _content_disposition_attachment(filename: str) -> str:
@@ -47,10 +50,36 @@ async def upload_documents(
     document_type: str = Form(...),
     user: User = Depends(get_current_user),
     upload_service: DocumentUploadUseCase = Depends(get_upload_service),
+    check_service: DocumentCheckUseCase = Depends(get_check_service),
+    query_service: DocumentQueryUseCase = Depends(get_query_service),
 ) -> list[DocumentResponse]:
+    started = perf_counter()
+    logger.info(
+        "document_upload_requested %s",
+        kv(user_id=user.id, files_count=len(files), document_type=document_type),
+    )
     file_tuples = [(f.filename or "unknown", await f.read()) for f in files]
     docs = await upload_service.upload_for_user(user.id, DocumentType(document_type), file_tuples)
-    return [DocumentResponse.model_validate(d, from_attributes=True) for d in docs]
+    logger.info(
+        "document_upload_completed %s",
+        kv(user_id=user.id, uploaded_count=len(docs), document_type=document_type),
+    )
+
+    responses: list[DocumentResponse] = []
+    for doc in docs:
+        check_started = perf_counter()
+        logger.info("document_check_started %s", kv(document_id=doc.id, user_id=user.id))
+        await check_service.run_checks_for_document(doc.id)
+        check_elapsed_ms = round((perf_counter() - check_started) * 1000, 2)
+        updated = await query_service.get_by_id(doc.id)
+        logger.info(
+            "document_check_completed %s",
+            kv(document_id=doc.id, user_id=user.id, status=updated.status, duration_ms=check_elapsed_ms),
+        )
+        responses.append(DocumentResponse.model_validate(updated, from_attributes=True))
+    total_elapsed_ms = round((perf_counter() - started) * 1000, 2)
+    logger.info("document_upload_flow_completed %s", kv(user_id=user.id, duration_ms=total_elapsed_ms))
+    return responses
 
 
 @router.get("/", response_model=PaginatedResponse[DocumentResponse])

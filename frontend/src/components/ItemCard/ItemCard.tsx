@@ -54,22 +54,51 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   const source = props.file ?? props.pdfUrl;
-  const fileProp = props.file
-    ? objectUrl
-    : props.pdfUrl
-      ? (props.pdfUrl.startsWith('http')
-          ? props.pdfUrl
-          : `${window.location.origin}${props.pdfUrl.startsWith('/') ? '' : '/'}${props.pdfUrl}`)
-      : undefined;
+  const pdfAbsUrl =
+    props.pdfUrl && !props.pdfUrl.startsWith('http')
+      ? `${window.location.origin}${props.pdfUrl.startsWith('/') ? '' : '/'}${props.pdfUrl}`
+      : props.pdfUrl;
+  const fileProp = props.file ? objectUrl : pdfAbsUrl;
 
   useEffect(() => {
+    let cancelled = false;
+    // Prefer object URLs so PDF credentials/cookies are always included.
     if (props.file) {
       const url = URL.createObjectURL(props.file);
       setObjectUrl(url);
       return () => URL.revokeObjectURL(url);
     }
-    setObjectUrl(null);
-  }, [props.file]);
+
+    if (!props.pdfUrl) {
+      setObjectUrl(null);
+      return;
+    }
+
+    const absUrl = pdfAbsUrl;
+    if (!absUrl) {
+      setObjectUrl(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(absUrl, { credentials: 'include' });
+        const blob = await res.blob();
+        if (cancelled) return;
+        const url = URL.createObjectURL(blob);
+        setObjectUrl(url);
+      } catch {
+        // If preview fails, the card will still render without a thumbnail.
+        setObjectUrl(null);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.file, props.pdfUrl]);
 
   useEffect(() => {
     if (!containerRef.current || !source) return;
@@ -83,6 +112,10 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
   }, [source]);
 
   const finalClassName = 'item-card p-5 rounded-[26px] bg-[rgba(0,0,0,0.03)]' + (props.className || '');
+  const shouldRenderPreview = !props.previewHidden && Boolean(fileProp) && containerWidth > 0;
+  // Guard against transient layout/transform measurements that can cause react-pdf
+  // to render a huge page, especially right after mount/filters/animations.
+  const renderWidth = shouldRenderPreview ? Math.min(containerWidth, 240) : 0;
   return (
     <div className={finalClassName}>
       <div className='flex flex-col gap-2'>
@@ -102,7 +135,7 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
                   clipPath: 'polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 0 100%)',
                 }}
               >
-                {fileProp ? (
+                {shouldRenderPreview ? (
                   <Document
                     file={fileProp}
                     loading={
@@ -113,7 +146,7 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
                   >
                     <Page
                       pageNumber={1}
-                      width={containerWidth > 0 ? containerWidth : 200}
+                      width={renderWidth}
                       className="max-w-full! h-auto!"
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
