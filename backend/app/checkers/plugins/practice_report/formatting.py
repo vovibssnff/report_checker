@@ -33,11 +33,11 @@ class PageSizeRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Страницы не формата А4: {bad_pages}",
+                    message="page_size_mismatch",
                     details={"pages": bad_pages},
                 )
             ]
-        return [RuleResult(status=CheckStatus.PASSED, message="Все страницы формата А4")]
+        return [RuleResult(status=CheckStatus.PASSED, message="page_size_ok")]
 
 
 @rule(
@@ -79,15 +79,15 @@ class MarginsRule(BaseRule):
             top_mm = min_top * _PTS_TO_MM
             bottom_mm = (page_h_pt - max_bottom) * _PTS_TO_MM
 
-            issues: list[str] = []
+            issues: list[dict[str, Any]] = []
             if abs(left_mm - left_expected) > tolerance:
-                issues.append(f"левое {left_mm:.1f}мм")
+                issues.append({"side": "left", "value_mm": round(left_mm, 1)})
             if abs(right_mm - right_expected) > tolerance:
-                issues.append(f"правое {right_mm:.1f}мм")
+                issues.append({"side": "right", "value_mm": round(right_mm, 1)})
             if abs(top_mm - top_expected) > tolerance:
-                issues.append(f"верхнее {top_mm:.1f}мм")
+                issues.append({"side": "top", "value_mm": round(top_mm, 1)})
             if abs(bottom_mm - bottom_expected) > tolerance:
-                issues.append(f"нижнее {bottom_mm:.1f}мм")
+                issues.append({"side": "bottom", "value_mm": round(bottom_mm, 1)})
 
             if issues:
                 violations.append({"page": page.number, "issues": issues})
@@ -97,11 +97,11 @@ class MarginsRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Неверные поля на страницах: {pages}",
-                    details={"violations": violations},
+                    message="margins_invalid",
+                    details={"violations": violations, "pages": pages},
                 )
             ]
-        return [RuleResult(status=CheckStatus.PASSED, message="Поля соответствуют требованиям")]
+        return [RuleResult(status=CheckStatus.PASSED, message="margins_ok")]
 
 
 @rule(
@@ -133,8 +133,8 @@ class FontRule(BaseRule):
                 results.append(
                     RuleResult(
                         status=CheckStatus.FAILED,
-                        message=f"Основной шрифт '{dominant}' вместо '{expected_font}'",
-                        details={"dominant_font": dominant},
+                        message="font_mismatch",
+                        details={"dominant_font": dominant, "expected": expected_font},
                     )
                 )
 
@@ -142,8 +142,8 @@ class FontRule(BaseRule):
             results.append(
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Мелкий шрифт на страницах: {sorted(small_pages)}",
-                    details={"pages": sorted(small_pages)},
+                    message="font_size_small",
+                    details={"pages": sorted(small_pages), "min_size": min_size},
                 )
             )
 
@@ -151,7 +151,7 @@ class FontRule(BaseRule):
             results.append(
                 RuleResult(
                     status=CheckStatus.PASSED,
-                    message="Шрифт соответствует требованиям",
+                    message="font_ok",
                 )
             )
         return results
@@ -192,13 +192,13 @@ class LineSpacingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Интервал не соответствует {expected} на страницах: {bad_pages}",
-                    details={"pages": bad_pages},
+                    message="line_spacing_mismatch",
+                    details={"pages": bad_pages, "expected": expected},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Межстрочный интервал в норме",
+                message="line_spacing_ok",
             )
         ]

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { observer } from 'mobx-react-lite';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, ArrowLeft } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Button from '../Button/Button';
 import CrossIcon from '../icons/CrossIcon/CrossIcon';
@@ -135,6 +136,8 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
   const [docTypeFilter, setDocTypeFilter] = useState<DocTypeFilter>('all');
   const [docTypeOpen, setDocTypeOpen] = useState(false);
   const docTypeRef = useRef<HTMLDivElement>(null);
+  const docTypeMenuRef = useRef<HTMLDivElement>(null);
+  const [docTypeMenuPos, setDocTypeMenuPos] = useState<{ left: number; top: number } | null>(null);
   const [selectedCard, setSelectedCard] = useState<DocumentItem | null>(null);
   const [transitionStartRect, setTransitionStartRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [transitionPreviewImage, setTransitionPreviewImage] = useState<string | null>(null);
@@ -170,11 +173,36 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
   useEffect(() => {
     if (!docTypeOpen) return;
     function handler(e: MouseEvent) {
-      if (!docTypeRef.current?.contains(e.target as Node)) setDocTypeOpen(false);
+      const target = e.target as Node;
+      if (
+        !docTypeRef.current?.contains(target) &&
+        !docTypeMenuRef.current?.contains(target)
+      ) {
+        setDocTypeOpen(false);
+      }
     }
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [docTypeOpen]);
+
+  useEffect(() => {
+    if (!docTypeOpen) return;
+
+    const updateMenuPos = () => {
+      const trigger = docTypeRef.current;
+      if (!trigger) return;
+      const rect = trigger.getBoundingClientRect();
+      setDocTypeMenuPos({ left: rect.right, top: rect.top - 6 });
+    };
+
+    updateMenuPos();
+    window.addEventListener('resize', updateMenuPos);
+    window.addEventListener('scroll', updateMenuPos, true);
+    return () => {
+      window.removeEventListener('resize', updateMenuPos);
+      window.removeEventListener('scroll', updateMenuPos, true);
+    };
+  }, [docTypeOpen, currentStep]);
 
   useEffect(() => {
     const backendDocumentType =
@@ -212,38 +240,59 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
     e.target.value = '';
   };
 
-  const handleUploadBlockClick = () => {
+  const handleUploadBlockClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button[type="submit"], button[aria-label]')) return;
     fileInputRef.current?.click();
   };
+
+  const blockDragCountRef = useRef(0);
+  const windowDragCountRef = useRef(0);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+  };
+
+  const handleBlockDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    blockDragCountRef.current++;
     if (e.dataTransfer.types.includes('Files')) setDragOverBlock(true);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
+  const handleBlockDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragOverBlock(false);
+    blockDragCountRef.current--;
+    if (blockDragCountRef.current <= 0) {
+      blockDragCountRef.current = 0;
+      setDragOverBlock(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    blockDragCountRef.current = 0;
+    windowDragCountRef.current = 0;
     setDragOverBlock(false);
     setDragOverWindow(false);
     pickFiles(e.dataTransfer.files);
   };
 
   const handleWindowDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    windowDragCountRef.current++;
     if (e.dataTransfer.types.includes('Files')) setDragOverWindow(true);
   };
 
   const handleWindowDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
-    e.stopPropagation();
-    setDragOverWindow(false);
+    windowDragCountRef.current--;
+    if (windowDragCountRef.current <= 0) {
+      windowDragCountRef.current = 0;
+      setDragOverWindow(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -268,7 +317,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
           <div className="embla__container h-full flex w-full">
             <div className={`embla__slide relative h-full transition-all duration-200 ${currentStep !== 0 ? 'opacity-0 pointer-events-none' : ''} `}>
               <div className="flex flex-col h-full px-5 relative overflow-y-auto no-scrollbar">
-                <div className="flex flex-col gap-1 shrink-0 pb-8 sticky top-0 w-full bg-linear-to-b from-90% from-white to-transparent z-10 px-5">
+                <div className="flex flex-col gap-1 shrink-0 pb-8 sticky top-0 w-full bg-linear-to-b from-70% from-white to-transparent z-10 px-5">
                   <h1 className="text-2xl pb-4">
                     {t('documents.checkedOfTotal', { checked: readinessCounts.checked, total: documentsStore.documents.length })}{' '}
                     {pluralDocuments(documentsStore.documents.length, t).replace(/^\d+\s/, '')}
@@ -289,50 +338,6 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                     <FilterChip label={t('documents.filterWarnings')} count={statusCounts.warnings} active={statusFilter === 'warnings'} onClick={() => setStatusFilter('warnings')} />
                   </div>
 
-                  <div className="flex flex-row gap-2 pt-2 -mx-2">
-                    <div className="relative flex-1 min-w-0">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
-                      <input
-                        type="text"
-                        value={authorSearch}
-                        onChange={(e) => setAuthorSearch(e.target.value)}
-                        placeholder={t('documents.searchByAuthor')}
-                        className="w-full h-9 pl-9 pr-3 text-sm rounded-full bg-[rgba(0,0,0,0.04)] outline-none placeholder:text-gray-400 focus:bg-[rgba(0,0,0,0.06)] transition-colors"
-                      />
-                    </div>
-                    <div className="relative shrink-0" ref={docTypeRef}>
-                      <button
-                        type="button"
-                        onClick={() => setDocTypeOpen((v) => !v)}
-                        className="h-9 pr-3 pl-4 flex items-center gap-1.5 text-sm rounded-full bg-[rgba(0,0,0,0.04)] hover:bg-[rgba(0,0,0,0.06)] transition-colors whitespace-nowrap"
-                      >
-                        {docTypeFilter === 'all' ? t('documents.docTypeAll') : t(`documents.${docTypeFilter}`)}
-                        <ChevronDown className={`size-3.5 text-gray-500 transition-transform ${docTypeOpen ? 'rotate-180' : ''}`} />
-                      </button>
-                      <AnimatePresence>
-                        {docTypeOpen && (
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.1 }}
-                            className="absolute right-0 top-[calc(100%+6px)] bg-white rounded-xl shadow-lg border border-[rgba(0,0,0,0.06)] py-1.5 z-50 min-w-[160px]"
-                          >
-                            {(['all', 'masters', 'bachelors'] as const).map((opt) => (
-                              <button
-                                key={opt}
-                                type="button"
-                                onClick={() => { setDocTypeFilter(opt); setDocTypeOpen(false); }}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[rgba(0,0,0,0.04)] ${docTypeFilter === opt ? 'font-medium' : ''}`}
-                              >
-                                {opt === 'all' ? t('documents.docTypeAll') : t(`documents.${opt}`)}
-                              </button>
-                            ))}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
                 </div>
 
                 <div className="relative flex-1 pb-20 no-scrollbar">
@@ -416,7 +421,8 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                   onMouseEnter={() => setIsFocused(true)}
                   onMouseLeave={() => setIsFocused(false)}
                   onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
+                  onDragEnter={handleBlockDragEnter}
+                  onDragLeave={handleBlockDragLeave}
                   onDrop={handleDrop}
                 >
                   <div className="min-w-0 flex-1 flex items-center relative z-0">
@@ -462,16 +468,55 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
           </div>
         </div>
 
-        <div className='absolute bottom-5 left-0 w-full flex items-center justify-center px-4 z-10 pointer-events-none'>
-          <div className='flex flex-row gap-3 pointer-events-auto'>
+        <div className='absolute bottom-0 left-0 pb-5 pt-10 bg-linear-to-t from-10% from-white to-transparent w-full flex items-center justify-center px-4 z-10 pointer-events-none'>
+          <motion.div layout transition={{ type: 'spring', stiffness: 320, damping: 30 }} className='flex flex-row gap-3 items-center pointer-events-auto drop-shadow-xl'>
+            <motion.div
+              layout
+              initial={false}
+              animate={{
+                width: currentStep === 0 ? 360 : 0,
+                opacity: currentStep === 0 ? 1 : 0,
+                marginRight: currentStep === 0 ? 0 : -12,
+              }}
+              transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+              className="overflow-hidden"
+              style={{ pointerEvents: currentStep === 0 ? 'auto' : 'none' }}
+            >
+              <div className="flex flex-row gap-2 w-[360px]">
+                <div className="relative w-[220px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={authorSearch}
+                    onChange={(e) => setAuthorSearch(e.target.value)}
+                    placeholder={t('documents.searchByAuthor')}
+                    className="w-full h-9 pl-9 pr-3 text-sm rounded-full bg-white outline-none placeholder:text-gray-400 focus:bg-[rgba(0,0,0,0.06)] transition-colors"
+                  />
+                </div>
+                <div className="relative shrink-0" ref={docTypeRef}>
+                  <button
+                    type="button"
+                    onClick={() => setDocTypeOpen((v) => !v)}
+                    className="h-9 pr-3 pl-4 flex items-center gap-1.5 text-sm rounded-full bg-white transition-colors whitespace-nowrap"
+                  >
+                    {docTypeFilter === 'all' ? t('documents.docTypeAll') : t(`documents.${docTypeFilter}`)}
+                    <ChevronDown className={`size-3.5 text-gray-500 transition-transform ${docTypeOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+
             {currentStep > 0 && (
               <Button
                 type="button"
-                typeStyle="secondary"
+                typeStyle="white"
                 size="s"
                 onClick={() => setCurrentStep(Math.max(currentStep - 1, 0))}
               >
-                {t('documents.documentsButton')}
+                <span className="inline-flex items-center gap-1.5 mt-[2px]">
+                  <ArrowLeft className="size-4 pt-[2px]" />
+                  {t('documents.documentsButton')}
+                </span>
               </Button>
             )}
             {currentStep < 1 && (
@@ -483,9 +528,45 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                 {t('tickets.newCheck')}
               </Button>
             )}
-          </div>
+          </motion.div>
         </div>
       </form>
+      {createPortal(
+        <AnimatePresence>
+          {docTypeOpen && docTypeMenuPos && (
+            <div
+              ref={docTypeMenuRef}
+              className="fixed z-[1000]"
+              style={{
+                left: docTypeMenuPos.left,
+                top: docTypeMenuPos.top,
+                transform: 'translate(-100%, -100%)',
+              }}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.1 }}
+                className="bg-white rounded-xl shadow-lg border border-[rgba(0,0,0,0.06)] py-1.5 min-w-[160px]"
+                style={{ transformOrigin: 'bottom right' }}
+              >
+                {(['all', 'masters', 'bachelors'] as const).map((opt) => (
+                  <button
+                    key={opt}
+                    type="button"
+                    onClick={() => { setDocTypeFilter(opt); setDocTypeOpen(false); }}
+                    className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[rgba(0,0,0,0.04)] ${docTypeFilter === opt ? 'font-medium' : ''}`}
+                  >
+                    {opt === 'all' ? t('documents.docTypeAll') : t(`documents.${opt}`)}
+                  </button>
+                ))}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
       <DocumentDetailModal
         open={selectedCard !== null}
         onClose={handleCloseModal}

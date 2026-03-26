@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+from itertools import groupby
 from typing import TYPE_CHECKING, Any
 
 from app.checkers.base import BaseRule, RuleResult, rule
@@ -10,6 +11,69 @@ if TYPE_CHECKING:
     from app.checkers.pdf_parser import ParsedPDF
 
 _PTS_TO_MM = 1 / 2.835
+
+
+def _merge_nearby_locations(
+    locations: list[dict[str, Any]],
+    max_gap_chars: float = 4,
+    avg_char_width_factor: float = 0.55,
+) -> list[dict[str, Any]]:
+    """Merge adjacent small-font locations on the same line.
+
+    Two blocks are merged when they share the same page, overlap vertically
+    (same line), and the horizontal gap between them is at most
+    ``max_gap_chars`` average character widths (covers a space or one short
+    word / number between them).
+    """
+    if not locations:
+        return locations
+
+    locations_sorted = sorted(locations, key=lambda e: (e["page"], e["location"]["y0"]))
+
+    merged: list[dict[str, Any]] = []
+    for _page, page_iter in groupby(locations_sorted, key=lambda e: e["page"]):
+        page_items = list(page_iter)
+
+        lines: list[list[dict[str, Any]]] = []
+        for item in sorted(page_items, key=lambda e: e["location"]["y0"]):
+            loc = item["location"]
+            placed = False
+            for line in lines:
+                ref = line[0]["location"]
+                v_overlap = min(loc["y1"], ref["y1"]) - max(loc["y0"], ref["y0"])
+                height = min(loc["y1"] - loc["y0"], ref["y1"] - ref["y0"])
+                if height > 0 and v_overlap / height > 0.5:
+                    line.append(item)
+                    placed = True
+                    break
+            if not placed:
+                lines.append([item])
+
+        for line in lines:
+            line.sort(key=lambda e: e["location"]["x0"])
+            cur = line[0]
+            for nxt in line[1:]:
+                gap = nxt["location"]["x0"] - cur["location"]["x1"]
+                font_sz = cur.get("font_size") or nxt.get("font_size") or 12
+                threshold = max_gap_chars * font_sz * avg_char_width_factor
+                if gap <= threshold:
+                    cur = {
+                        "page": cur["page"],
+                        "text": (cur["text"] + " " + nxt["text"])[:120],
+                        "font_size": min(cur.get("font_size", 12), nxt.get("font_size", 12)),
+                        "location": {
+                            "x0": min(cur["location"]["x0"], nxt["location"]["x0"]),
+                            "y0": min(cur["location"]["y0"], nxt["location"]["y0"]),
+                            "x1": max(cur["location"]["x1"], nxt["location"]["x1"]),
+                            "y1": max(cur["location"]["y1"], nxt["location"]["y1"]),
+                        },
+                    }
+                else:
+                    merged.append(cur)
+                    cur = nxt
+            merged.append(cur)
+
+    return merged
 
 
 @rule(
@@ -32,11 +96,11 @@ class PageSizeRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Страницы не соответствуют формату А4: {bad_pages}",
+                    message="page_size_mismatch",
                     details={"pages": bad_pages},
                 )
             ]
-        return [RuleResult(status=CheckStatus.PASSED, message="Все страницы формата А4")]
+        return [RuleResult(status=CheckStatus.PASSED, message="page_size_ok")]
 
 
 @rule(
@@ -78,15 +142,15 @@ class MarginsRule(BaseRule):
             top_mm = min_top * _PTS_TO_MM
             bottom_mm = (page_h_pt - max_bottom) * _PTS_TO_MM
 
-            issues: list[str] = []
+            issues: list[dict[str, Any]] = []
             if abs(left_mm - left_expected) > tolerance:
-                issues.append(f"левое {left_mm:.1f}мм")
+                issues.append({"side": "left", "value_mm": round(left_mm, 1)})
             if abs(right_mm - right_expected) > tolerance:
-                issues.append(f"правое {right_mm:.1f}мм")
+                issues.append({"side": "right", "value_mm": round(right_mm, 1)})
             if abs(top_mm - top_expected) > tolerance:
-                issues.append(f"верхнее {top_mm:.1f}мм")
+                issues.append({"side": "top", "value_mm": round(top_mm, 1)})
             if abs(bottom_mm - bottom_expected) > tolerance:
-                issues.append(f"нижнее {bottom_mm:.1f}мм")
+                issues.append({"side": "bottom", "value_mm": round(bottom_mm, 1)})
 
             if issues:
                 violations.append({"page": page.number, "issues": issues})
@@ -96,11 +160,11 @@ class MarginsRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Неверные поля на страницах: {pages}",
-                    details={"violations": violations},
+                    message="margins_invalid",
+                    details={"violations": violations, "pages": pages},
                 )
             ]
-        return [RuleResult(status=CheckStatus.PASSED, message="Поля соответствуют требованиям")]
+        return [RuleResult(status=CheckStatus.PASSED, message="margins_ok")]
 
 
 @rule(
@@ -119,12 +183,27 @@ class FontRule(BaseRule):
         results: list[RuleResult] = []
         font_counts: Counter[str] = Counter()
         small_font_pages: set[int] = set()
+        small_font_locations: list[dict[str, Any]] = []
 
         for page in pdf.pages:
             for tb in page.text_blocks:
                 font_counts[tb.font_name] += len(tb.text)
                 if tb.font_size < min_size - 0.5 and len(tb.text.strip()) > 3:
                     small_font_pages.add(page.number)
+                    x0, top, x1, bottom = tb.bbox
+                    small_font_locations.append({
+                        "page": page.number,
+                        "text": tb.text.strip()[:80],
+                        "font_size": round(tb.font_size, 1),
+                        "location": {
+                            "x0": round(x0, 2),
+                            "y0": round(top, 2),
+                            "x1": round(x1, 2),
+                            "y1": round(bottom, 2),
+                        },
+                    })
+
+        small_font_locations = _merge_nearby_locations(small_font_locations)
 
         if font_counts:
             dominant_font = font_counts.most_common(1)[0][0]
@@ -132,7 +211,7 @@ class FontRule(BaseRule):
                 results.append(
                     RuleResult(
                         status=CheckStatus.FAILED,
-                        message=f"Основной шрифт '{dominant_font}' вместо '{expected_font}'",
+                        message="font_mismatch",
                         details={"dominant_font": dominant_font, "expected": expected_font},
                     )
                 )
@@ -141,8 +220,12 @@ class FontRule(BaseRule):
             results.append(
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Размер шрифта менее {min_size}pt на страницах: {sorted(small_font_pages)}",
-                    details={"pages": sorted(small_font_pages)},
+                    message="font_size_small",
+                    details={
+                        "pages": sorted(small_font_pages),
+                        "min_size": min_size,
+                        "locations": small_font_locations,
+                    },
                 )
             )
 
@@ -150,7 +233,7 @@ class FontRule(BaseRule):
             results.append(
                 RuleResult(
                     status=CheckStatus.PASSED,
-                    message="Шрифт соответствует требованиям",
+                    message="font_ok",
                 )
             )
         return results
@@ -160,7 +243,7 @@ class FontRule(BaseRule):
     code="vkr.formatting.line_spacing",
     name="Межстрочный интервал",
     document_type=DocumentType.VKR_TEMPLATE,
-    severity=Severity.WARNING,
+    severity=Severity.ERROR,
     description="Проверка межстрочного интервала (1.5)",
     default_config={"expected_spacing": 1.5, "tolerance": 0.3},
 )
@@ -191,14 +274,14 @@ class LineSpacingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Межстрочный интервал не соответствует {expected} на страницах: {bad_pages}",
-                    details={"pages": bad_pages},
+                    message="line_spacing_mismatch",
+                    details={"pages": bad_pages, "expected": expected},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Межстрочный интервал соответствует требованиям",
+                message="line_spacing_ok",
             )
         ]
 
@@ -218,6 +301,7 @@ class ParagraphIndentRule(BaseRule):
         indent_pt = indent_mm / _PTS_TO_MM
         tolerance_pt = tolerance_mm / _PTS_TO_MM
         bad_pages: list[int] = []
+        bad_indent_locations: list[dict[str, Any]] = []
 
         for page in pdf.pages:
             blocks = sorted(page.text_blocks, key=lambda b: (b.bbox[1], b.bbox[0]))
@@ -229,6 +313,7 @@ class ParagraphIndentRule(BaseRule):
 
             indented_count = 0
             total_paragraphs = 0
+            page_bad: list[dict[str, Any]] = []
 
             for i, block in enumerate(blocks):
                 is_new_paragraph = i == 0 or (blocks[i].bbox[1] - blocks[i - 1].bbox[3]) > blocks[i - 1].font_size * 0.5
@@ -240,22 +325,35 @@ class ParagraphIndentRule(BaseRule):
                 offset = block.bbox[0] - base_x0
                 if abs(offset - indent_pt) < tolerance_pt:
                     indented_count += 1
+                else:
+                    x0, top, x1, bottom = block.bbox
+                    page_bad.append({
+                        "page": page.number,
+                        "text": block.text.strip()[:80],
+                        "location": {
+                            "x0": round(x0, 2),
+                            "y0": round(top, 2),
+                            "x1": round(x1, 2),
+                            "y1": round(bottom, 2),
+                        },
+                    })
 
             if total_paragraphs > 2 and indented_count < total_paragraphs * 0.5:
                 bad_pages.append(page.number)
+                bad_indent_locations.extend(page_bad)
 
         if bad_pages:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Абзацный отступ не обнаружен на страницах: {bad_pages}",
-                    details={"pages": bad_pages},
+                    message="paragraph_indent_missing",
+                    details={"pages": bad_pages, "locations": bad_indent_locations},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Абзацный отступ соответствует требованиям",
+                message="paragraph_indent_ok",
             )
         ]
 
@@ -270,6 +368,7 @@ class ParagraphIndentRule(BaseRule):
 class AlignmentRule(BaseRule):
     async def check(self, pdf: ParsedPDF, config: dict[str, Any]) -> list[RuleResult]:
         bad_pages: list[int] = []
+        misaligned_locations: list[dict[str, Any]] = []
 
         for page in pdf.pages:
             if not page.text_blocks:
@@ -283,13 +382,26 @@ class AlignmentRule(BaseRule):
             aligned_count = sum(1 for r in right_edges if abs(r - max_right) < 10)
             if aligned_count < len(right_edges) * 0.6:
                 bad_pages.append(page.number)
+                for tb in long_blocks:
+                    if abs(tb.bbox[2] - max_right) >= 10:
+                        x0, top, x1, bottom = tb.bbox
+                        misaligned_locations.append({
+                            "page": page.number,
+                            "text": tb.text.strip()[:80],
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
+                        })
 
         if bad_pages:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Текст не выровнен по ширине на страницах: {bad_pages}",
-                    details={"pages": bad_pages},
+                    message="alignment_invalid",
+                    details={"pages": bad_pages, "locations": misaligned_locations},
                 )
             ]
-        return [RuleResult(status=CheckStatus.PASSED, message="Текст выровнен по ширине")]
+        return [RuleResult(status=CheckStatus.PASSED, message="alignment_ok")]

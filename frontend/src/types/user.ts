@@ -8,7 +8,14 @@ export interface User {
 
 export interface DevLoginPayload {
   email: string;
+  password: string;
+}
+
+export interface DevRegisterPayload {
+  email: string;
   name: string;
+  password: string;
+  role: 'student' | 'teacher';
 }
 
 export interface DevLogoutPayload {

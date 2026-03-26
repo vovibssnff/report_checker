@@ -34,30 +34,30 @@ class AppendixLabelingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.PASSED,
-                    message="Приложения не обнаружены",
+                    message="appendices_not_found",
                 )
             ]
 
-        issues: list[str] = []
+        issues: list[dict[str, Any]] = []
         for i, label in enumerate(found_labels):
             if label not in _VALID_LABELS:
-                issues.append(f"Недопустимая буква: {label}")
+                issues.append({"type": "invalid_label", "label": label})
             elif i < len(_VALID_LABELS):
                 expected = _VALID_LABELS[i]
                 if label != expected:
-                    issues.append(f"Ожидалось '{expected}', найдено '{label}'")
+                    issues.append({"type": "wrong_order", "expected": expected, "found": label})
 
         if issues:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Нарушена маркировка приложений",
+                    message="appendices_labeling_invalid",
                     details={"found_labels": found_labels, "issues": issues},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Приложения обозначены корректно",
+                message="appendices_labeling_ok",
             )
         ]

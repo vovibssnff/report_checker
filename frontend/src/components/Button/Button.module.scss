@@ -238,6 +238,20 @@
         }
     }
 
+    &--white--default {
+        background: #fff;
+        color: #141414;
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+
+        &:hover {
+            background: #FAFAFA;
+        }
+
+        &:active {
+            background: #F5F5F5;
+        }
+    }
+
     &--disabled {
         opacity: 0.6;
         pointer-events: none;

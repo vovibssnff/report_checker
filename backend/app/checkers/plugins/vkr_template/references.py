@@ -31,7 +31,7 @@ class ReferencesPresenceRule(BaseRule):
                     return [
                         RuleResult(
                             status=CheckStatus.PASSED,
-                            message="Список литературы присутствует",
+                            message="references_ok",
                         )
                     ]
 
@@ -40,13 +40,13 @@ class ReferencesPresenceRule(BaseRule):
                 return [
                     RuleResult(
                         status=CheckStatus.PASSED,
-                        message="Список литературы присутствует",
+                        message="references_ok",
                     )
                 ]
 
         return [
             RuleResult(
                 status=CheckStatus.FAILED,
-                message="Список литературы не найден",
+                message="references_missing",
             )
         ]

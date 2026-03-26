@@ -25,30 +25,41 @@ class TableCaptionFormatRule(BaseRule):
         bad_captions: list[dict[str, Any]] = []
 
         for page in pdf.pages:
-            for line in page.lines:
-                mention = _TABLE_MENTION.search(line)
+            for block in page.text_blocks:
+                text = block.text.strip()
+                if not text:
+                    continue
+                mention = _TABLE_MENTION.search(text)
                 if not mention:
                     continue
-                if not _TABLE_PATTERN.search(line):
+                if not _TABLE_PATTERN.search(text):
+                    x0, top, x1, bottom = block.bbox
                     bad_captions.append(
                         {
                             "page": page.number,
-                            "text": line.strip(),
+                            "text": text,
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
                         }
                     )
 
         if bad_captions:
+            pages = sorted({item["page"] for item in bad_captions})
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Неверный формат подписи таблиц ({len(bad_captions)} шт.)",
-                    details={"bad_captions": bad_captions},
+                    message="table_caption_invalid",
+                    details={"bad_captions": bad_captions, "pages": pages, "count": len(bad_captions)},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Подписи таблиц оформлены верно",
+                message="table_caption_ok",
             )
         ]
 
@@ -75,7 +86,7 @@ class TableNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.PASSED,
-                    message="Таблицы не обнаружены",
+                    message="tables_not_found",
                 )
             ]
 
@@ -88,13 +99,13 @@ class TableNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Нарушена последовательность нумерации таблиц",
+                    message="table_numbering_invalid",
                     details={"found_numbers": numbers, "gaps_at": gaps},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Нумерация таблиц последовательна",
+                message="table_numbering_ok",
             )
         ]

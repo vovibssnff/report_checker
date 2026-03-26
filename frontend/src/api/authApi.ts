@@ -1,9 +1,13 @@
-import type { DevLoginPayload, User } from '../types/user';
+import type { DevLoginPayload, DevRegisterPayload, User } from '../types/user';
 import { apiGet, apiPost } from './client';
 
 export async function devLogin(payload: DevLoginPayload): Promise<User> {
-  // Backend sets an HttpOnly cookie `access_token` and returns the current user in JSON.
-  const data = await apiPost<User>('/auth/dev/login', { email: payload.email, name: payload.name });
+  const data = await apiPost<User>('/auth/dev/login', { email: payload.email, password: payload.password });
+  return data;
+}
+
+export async function devRegister(payload: DevRegisterPayload): Promise<User> {
+  const data = await apiPost<User>('/auth/dev/register', payload);
   return data;
 }
 

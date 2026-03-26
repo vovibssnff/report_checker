@@ -51,6 +51,7 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const stableWidthRef = useRef(0);
   const [objectUrl, setObjectUrl] = useState<string | null>(null);
 
   const source = props.file ?? props.pdfUrl;
@@ -62,7 +63,6 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
 
   useEffect(() => {
     let cancelled = false;
-    // Prefer object URLs so PDF credentials/cookies are always included.
     if (props.file) {
       const url = URL.createObjectURL(props.file);
       setObjectUrl(url);
@@ -88,7 +88,6 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
         const url = URL.createObjectURL(blob);
         setObjectUrl(url);
       } catch {
-        // If preview fails, the card will still render without a thumbnail.
         setObjectUrl(null);
       }
     })();
@@ -104,12 +103,19 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
     if (!containerRef.current || !source) return;
     const el = containerRef.current;
     const ro = new ResizeObserver((entries) => {
+      if (props.previewHidden) return;
       const w = entries[0]?.contentRect.width;
-      if (typeof w === 'number' && w > 0) setContainerWidth(w);
+      if (typeof w === 'number' && w > 0 && w <= (stableWidthRef.current || Infinity)) {
+        stableWidthRef.current = w;
+        setContainerWidth(w);
+      } else if (stableWidthRef.current === 0 && typeof w === 'number' && w > 0) {
+        stableWidthRef.current = w;
+        setContainerWidth(w);
+      }
     });
     ro.observe(el);
     return () => ro.disconnect();
-  }, [source]);
+  }, [source, props.previewHidden]);
 
   const finalClassName = 'item-card p-5 rounded-[26px] bg-[rgba(0,0,0,0.03)]' + (props.className || '');
   const shouldRenderPreview = !props.previewHidden && Boolean(fileProp) && containerWidth > 0;
@@ -147,6 +153,7 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
                     <Page
                       pageNumber={1}
                       width={renderWidth}
+                      devicePixelRatio={4}
                       className="max-w-full! h-auto!"
                       renderTextLayer={false}
                       renderAnnotationLayer={false}
@@ -180,9 +187,9 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
             </button>
           </div>
           <div className='flex flex-col gap-2 w-full justify-between pb-[34px]'>
-            {props.status !== 'pending' ? <p className='font-medium'>{props.title}</p>
+            {props.status !== 'pending' ? <p className='font-medium break-all'>{props.title}</p>
               :
-              <LoadingText className="font-medium">{props.title}</LoadingText>
+              <LoadingText className="font-medium break-all">{props.title}</LoadingText>
             }
             <table className="w-full text-sm border-separate border-spacing-y-1.5">
               <tbody>

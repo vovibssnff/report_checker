@@ -25,30 +25,46 @@ class FigureCaptionFormatRule(BaseRule):
         bad_captions: list[dict[str, Any]] = []
 
         for page in pdf.pages:
-            for line in page.lines:
-                mention = _FIGURE_MENTION.search(line)
+            for block in page.text_blocks:
+                text = block.text.strip()
+                if not text:
+                    continue
+
+                mention = _FIGURE_MENTION.search(text)
                 if not mention:
                     continue
-                if not _FIGURE_PATTERN.search(line):
+                if not _FIGURE_PATTERN.search(text):
+                    x0, top, x1, bottom = block.bbox
                     bad_captions.append(
                         {
                             "page": page.number,
-                            "text": line.strip(),
+                            "text": text,
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
                         }
                     )
 
         if bad_captions:
+            pages = sorted({item["page"] for item in bad_captions})
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Неверный формат подписи рисунков ({len(bad_captions)} шт.)",
-                    details={"bad_captions": bad_captions},
+                    message="figure_caption_invalid",
+                    details={
+                        "bad_captions": bad_captions,
+                        "pages": pages,
+                        "count": len(bad_captions),
+                    },
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Подписи рисунков оформлены верно",
+                message="figure_caption_ok",
             )
         ]
 
@@ -75,7 +91,7 @@ class FigureNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.PASSED,
-                    message="Рисунки не обнаружены",
+                    message="figures_not_found",
                 )
             ]
 
@@ -88,13 +104,13 @@ class FigureNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Нарушена последовательность нумерации рисунков",
+                    message="figure_numbering_invalid",
                     details={"found_numbers": numbers, "gaps_at": gaps},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Нумерация рисунков последовательна",
+                message="figure_numbering_ok",
             )
         ]

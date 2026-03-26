@@ -1,16 +1,11 @@
-import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AppContainer from './components/AppContainer/AppContainer';
 import ChatArea from './components/ChatArea/ChatArea';
 import SidebarHeader from './components/SidebarHeader/SidebarHeader';
 import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
 import AuthPage from './pages/AuthPage';
-import { authStore } from './store/authStore';
 
 function TicketsApp() {
-  useEffect(() => {
-    authStore.fetchMe();
-  }, []);
   return (
     <AppContainer>
       <div className="fixed top-0 left-0 right-0 z-50 bg-linear-to-b from-white to-transparent">

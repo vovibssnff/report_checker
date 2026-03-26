@@ -43,18 +43,25 @@ class StructuralElementsRule(BaseRule):
 
                 issues: list[str] = []
                 if tb.text.strip() != tb.text.strip().upper():
-                    issues.append("не в верхнем регистре")
+                    issues.append("not_uppercase")
 
                 block_center = (tb.bbox[0] + tb.bbox[2]) / 2
                 if abs(block_center - page_center_pt) > 30:
-                    issues.append("не по центру")
+                    issues.append("not_centered")
 
                 if issues:
+                    x0, top, x1, bottom = tb.bbox
                     violations.append(
                         {
                             "page": page.number,
                             "text": tb.text.strip(),
                             "issues": issues,
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
                         }
                     )
 
@@ -62,14 +69,14 @@ class StructuralElementsRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Структурные элементы оформлены неверно",
+                    message="structural_elements_invalid",
                     details={"violations": violations},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Структурные элементы оформлены верно",
+                message="structural_elements_ok",
             )
         ]
 
@@ -112,14 +119,14 @@ class NewPageRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Разделы не начинаются с новой страницы: стр. {violations}",
+                    message="sections_not_new_page",
                     details={"pages": violations},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Разделы начинаются с новой страницы",
+                message="sections_new_page_ok",
             )
         ]
 
@@ -154,11 +161,11 @@ class SectionNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.PASSED,
-                    message="Нумерованные заголовки не обнаружены",
+                    message="section_numbering_none",
                 )
             ]
 
-        issues: list[str] = []
+        issues: list[dict[str, Any]] = []
         prev_parts: list[int] = []
 
         for num_str, page_num in numbered_headings:
@@ -167,9 +174,9 @@ class SectionNumberingRule(BaseRule):
 
             if level == 1:
                 if prev_parts and prev_parts[0] + 1 != parts[0] and parts[0] != 1:
-                    issues.append(f"Нарушена нумерация: {num_str} (стр. {page_num})")
+                    issues.append({"type": "wrong_number", "number": num_str, "page": page_num})
             elif level >= 2 and prev_parts and len(prev_parts) < level - 1:
-                issues.append(f"Пропущен уровень перед {num_str} (стр. {page_num})")
+                issues.append({"type": "skipped_level", "number": num_str, "page": page_num})
 
             prev_parts = parts
 
@@ -177,8 +184,8 @@ class SectionNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Нарушена иерархическая нумерация разделов",
+                    message="section_numbering_invalid",
                     details={"issues": issues},
                 )
             ]
-        return [RuleResult(status=CheckStatus.PASSED, message="Нумерация разделов корректна")]
+        return [RuleResult(status=CheckStatus.PASSED, message="section_numbering_ok")]

@@ -89,10 +89,13 @@
     "statusWarnings": "Есть предупреждения",
     "noWarnings": "Нет предупреждений",
     "type": "Тип",
+    "type_full": "Тип документа",
     "format": "Формат",
     "pages": "Страницы",
+    "pages_full": "Количество страниц",
     "download": "Скачать",
     "author": "Автор",
+    "author_full": "Автор документа",
     "statusLabel": "Статус",
     "pagePrev": "Предыдущая страница",
     "pageNext": "Следующая страница",
@@ -136,6 +139,161 @@
     "detected": "обнаружено",
     "minVolume": "Минимальный объём разделов: соблюдён",
     "introSpecificity": "Раздел «Введение»: мало конкретики",
-    "intro70general": "70% общих фраз"
+    "intro70general": "70% общих фраз",
+    "ruleLabels": {
+      "vkr": {
+        "headings": {
+          "structural_elements": "Структурные элементы",
+          "new_page": "Новая страница для разделов",
+          "section_numbering": "Нумерация заголовков разделов"
+        },
+        "structure": {
+          "required_sections": "Обязательные разделы"
+        },
+        "formatting": {
+          "page_size": "Формат страницы",
+          "margins": "Поля страницы",
+          "font_family": "Основной шрифт",
+          "font_size": "Размер шрифта",
+          "line_spacing": "Межстрочный интервал",
+          "paragraph_indent": "Абзацный отступ",
+          "alignment": "Выравнивание текста"
+        },
+        "appendices": {
+          "labeling": "Оформление приложений"
+        },
+        "figures": {
+          "caption_format": "Подписи рисунков",
+          "numbering": "Нумерация рисунков"
+        },
+        "formulas": {
+          "numbering": "Нумерация формул"
+        },
+        "pagination": {
+          "arabic_numbers": "Нумерация страниц (арабские цифры)",
+          "position": "Положение номера страницы"
+        },
+        "references": {
+          "presence": "Список литературы"
+        },
+        "tables": {
+          "caption_format": "Подписи таблиц",
+          "numbering": "Нумерация таблиц"
+        }
+      },
+      "practice": {
+        "content": {
+          "min_pages": "Минимальное количество страниц"
+        },
+        "formatting": {
+          "page_size": "Формат страницы",
+          "margins": "Поля страницы",
+          "font_family": "Основной шрифт",
+          "font_size": "Размер шрифта",
+          "line_spacing": "Межстрочный интервал"
+        },
+        "structure": {
+          "required_sections": "Обязательные разделы",
+          "stage_descriptions": "Описание этапов практики",
+          "screenshots": "Наличие скриншотов"
+        }
+      }
+    },
+    "messages": {
+      "page_size_mismatch": "Страницы не соответствуют формату А4",
+      "page_size_ok": "Все страницы формата А4",
+      "margins_invalid": "Неверные поля на страницах",
+      "margins_ok": "Поля соответствуют требованиям",
+      "font_mismatch": "Основной шрифт «{{dominant}}» вместо «{{expected}}»",
+      "font_size_small": "Размер шрифта менее {{min_size}}pt",
+      "font_ok": "Шрифт соответствует требованиям",
+      "line_spacing_mismatch": "Межстрочный интервал не соответствует {{expected}}",
+      "line_spacing_ok": "Межстрочный интервал соответствует требованиям",
+      "paragraph_indent_missing": "Абзацный отступ не обнаружен",
+      "paragraph_indent_ok": "Абзацный отступ соответствует требованиям",
+      "alignment_invalid": "Текст не выровнен по ширине",
+      "alignment_ok": "Текст выровнен по ширине",
+      "pagination_missing": "Отсутствует нумерация страниц",
+      "pagination_ok": "Нумерация страниц присутствует",
+      "pagination_not_centered": "Номера страниц не по центру",
+      "pagination_centered_ok": "Номера страниц расположены по центру",
+      "structural_elements_invalid": "Структурные элементы оформлены неверно",
+      "structural_elements_ok": "Структурные элементы оформлены верно",
+      "sections_not_new_page": "Разделы не начинаются с новой страницы",
+      "sections_new_page_ok": "Разделы начинаются с новой страницы",
+      "section_numbering_none": "Нумерованные заголовки не обнаружены",
+      "section_numbering_invalid": "Нарушена иерархическая нумерация разделов",
+      "section_numbering_ok": "Нумерация разделов корректна",
+      "required_sections_missing": "Отсутствуют обязательные разделы",
+      "required_sections_ok": "Все обязательные разделы присутствуют в правильном порядке",
+      "sections_order_invalid": "Нарушен порядок разделов",
+      "references_ok": "Список литературы присутствует",
+      "references_missing": "Список литературы не найден",
+      "figure_caption_invalid": "Неверный формат подписи рисунков ({{count}} шт.)",
+      "figure_caption_ok": "Подписи рисунков оформлены верно",
+      "figures_not_found": "Рисунки не обнаружены",
+      "figure_numbering_invalid": "Нарушена последовательность нумерации рисунков",
+      "figure_numbering_ok": "Нумерация рисунков последовательна",
+      "table_caption_invalid": "Неверный формат подписи таблиц ({{count}} шт.)",
+      "table_caption_ok": "Подписи таблиц оформлены верно",
+      "tables_not_found": "Таблицы не обнаружены",
+      "table_numbering_invalid": "Нарушена последовательность нумерации таблиц",
+      "table_numbering_ok": "Нумерация таблиц последовательна",
+      "formulas_not_found": "Формулы с нумерацией не обнаружены",
+      "formula_numbering_invalid": "Нарушена последовательность нумерации формул",
+      "formula_numbering_ok": "Нумерация формул последовательна",
+      "appendices_not_found": "Приложения не обнаружены",
+      "appendices_labeling_invalid": "Нарушена маркировка приложений",
+      "appendices_labeling_ok": "Приложения обозначены корректно",
+      "stage_descriptions_missing": "Не найдено описание этапов",
+      "stage_descriptions_ok": "Описания всех этапов присутствуют",
+      "screenshots_insufficient": "Найдено {{found}} изображений, минимум {{required}}",
+      "screenshots_ok": "Найдено {{found}} изображений",
+      "min_pages_insufficient": "Количество страниц ({{page_count}}) меньше минимума ({{min_pages}})",
+      "min_pages_ok": "Количество страниц ({{page_count}}) соответствует требованиям",
+      "font_size_tooltip": "Мелкий размер шрифта ({{size}}pt)"
+    },
+    "issues": {
+      "not_uppercase": "Не в верхнем регистре",
+      "not_centered": "Не по центру",
+      "wrong_number": "Нарушена нумерация: {{number}} (стр. {{page}})",
+      "skipped_level": "Пропущен уровень перед {{number}} (стр. {{page}})",
+      "invalid_label": "Недопустимая буква: {{label}}",
+      "wrong_order": "Ожидалось «{{expected}}», найдено «{{found}}»",
+      "section_before_after": "«{{before}}» найден после «{{after}}»"
+    },
+    "marginSides": {
+      "left": "левое",
+      "right": "правое",
+      "top": "верхнее",
+      "bottom": "нижнее"
+    },
+    "sections": {
+      "title_page": "Титульный лист",
+      "task": "Задание",
+      "abstract": "Реферат",
+      "toc": "Содержание",
+      "introduction": "Введение",
+      "conclusion": "Заключение",
+      "references": "Список источников"
+    },
+    "richDetail": {
+      "page": "стр.",
+      "pages": "Страницы с нарушением",
+      "expected": "Ожидаемый",
+      "actual": "Текущий",
+      "of": "из",
+      "missingSections": "Отсутствуют разделы",
+      "missingStages": "Отсутствуют этапы",
+      "stage": "Этап",
+      "found": "Найдено",
+      "required": "Требуется",
+      "images_one": "изображение",
+      "images_few": "изображения",
+      "images_many": "изображений",
+      "pages_one": "страница",
+      "pages_few": "страницы",
+      "pages_many": "страниц"
+    }
   }
 }

@@ -4,7 +4,7 @@ import styles from "./Button.module.scss";
 
 export type ButtonSize = "xs" | "s" | "m" | "l" | "xl";
 export type ButtonColor = "default" | "green" | "red" | "blue" | "yellow";
-export type ButtonType = "primary" | "secondary" | "ghost";
+export type ButtonType = "primary" | "secondary" | "ghost" | "white";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;

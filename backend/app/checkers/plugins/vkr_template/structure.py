@@ -9,14 +9,14 @@ if TYPE_CHECKING:
     from app.checkers.pdf_parser import ParsedPDF
 
 _REQUIRED_SECTIONS = [
-    ("титульный лист", ["титульный лист"]),
-    ("задание", ["задание"]),
-    ("реферат", ["реферат", "аннотация"]),
-    ("содержание", ["содержание", "оглавление"]),
-    ("введение", ["введение"]),
-    ("заключение", ["заключение"]),
+    ("title_page", ["титульный лист"]),
+    ("task", ["задание"]),
+    ("abstract", ["реферат", "аннотация"]),
+    ("toc", ["содержание", "оглавление"]),
+    ("introduction", ["введение"]),
+    ("conclusion", ["заключение"]),
     (
-        "список источников",
+        "references",
         [
             "список использованных источников",
             "список литературы",
@@ -44,7 +44,7 @@ class RequiredSectionsRule(BaseRule):
         found_order: list[tuple[str, int]] = []
         missing: list[str] = []
 
-        for section_name, keywords in _REQUIRED_SECTIONS:
+        for section_code, keywords in _REQUIRED_SECTIONS:
             position = -1
             for kw in keywords:
                 for i, line in enumerate(searchable):
@@ -54,29 +54,32 @@ class RequiredSectionsRule(BaseRule):
                 if position >= 0:
                     break
             if position >= 0:
-                found_order.append((section_name, position))
+                found_order.append((section_code, position))
             else:
-                missing.append(section_name)
+                missing.append(section_code)
 
         if missing:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Отсутствуют обязательные разделы: {', '.join(missing)}",
+                    message="required_sections_missing",
                     details={"missing_sections": missing},
                 )
             ]
 
-        order_violations: list[str] = []
+        order_violations: list[dict[str, str]] = []
         for i in range(len(found_order) - 1):
             if found_order[i][1] > found_order[i + 1][1]:
-                order_violations.append(f"'{found_order[i][0]}' найден после '{found_order[i + 1][0]}'")
+                order_violations.append({
+                    "before": found_order[i][0],
+                    "after": found_order[i + 1][0],
+                })
 
         if order_violations:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Нарушен порядок разделов",
+                    message="sections_order_invalid",
                     details={"order_violations": order_violations},
                 )
             ]
@@ -84,6 +87,6 @@ class RequiredSectionsRule(BaseRule):
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Все обязательные разделы присутствуют в правильном порядке",
+                message="required_sections_ok",
             )
         ]

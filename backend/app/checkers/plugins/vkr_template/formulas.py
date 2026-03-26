@@ -34,7 +34,7 @@ class FormulaNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.PASSED,
-                    message="Формулы с нумерацией не обнаружены",
+                    message="formulas_not_found",
                 )
             ]
 
@@ -47,13 +47,13 @@ class FormulaNumberingRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Нарушена последовательность нумерации формул",
+                    message="formula_numbering_invalid",
                     details={"found_numbers": numbers, "gaps_at": gaps},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Нумерация формул последовательна",
+                message="formula_numbering_ok",
             )
         ]

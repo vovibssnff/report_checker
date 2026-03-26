@@ -136,6 +136,161 @@
     "detected": "detected",
     "minVolume": "Minimum section volume: observed",
     "introSpecificity": "Section «Introduction»: little specificity",
-    "intro70general": "70% general phrases"
+    "intro70general": "70% general phrases",
+    "ruleLabels": {
+      "vkr": {
+        "headings": {
+          "structural_elements": "Structural elements",
+          "new_page": "New page for sections",
+          "section_numbering": "Section heading numbering"
+        },
+        "structure": {
+          "required_sections": "Required sections"
+        },
+        "formatting": {
+          "page_size": "Page size",
+          "margins": "Page margins",
+          "font_family": "Main font",
+          "font_size": "Font size",
+          "line_spacing": "Line spacing",
+          "paragraph_indent": "Paragraph indent",
+          "alignment": "Text alignment"
+        },
+        "appendices": {
+          "labeling": "Appendix labeling"
+        },
+        "figures": {
+          "caption_format": "Figure captions",
+          "numbering": "Figure numbering"
+        },
+        "formulas": {
+          "numbering": "Formula numbering"
+        },
+        "pagination": {
+          "arabic_numbers": "Page numbering (Arabic numerals)",
+          "position": "Page number position"
+        },
+        "references": {
+          "presence": "References list"
+        },
+        "tables": {
+          "caption_format": "Table captions",
+          "numbering": "Table numbering"
+        }
+      },
+      "practice": {
+        "content": {
+          "min_pages": "Minimum page count"
+        },
+        "formatting": {
+          "page_size": "Page size",
+          "margins": "Page margins",
+          "font_family": "Main font",
+          "font_size": "Font size",
+          "line_spacing": "Line spacing"
+        },
+        "structure": {
+          "required_sections": "Required sections",
+          "stage_descriptions": "Practice stage descriptions",
+          "screenshots": "Screenshots"
+        }
+      }
+    },
+    "messages": {
+      "page_size_mismatch": "Pages do not match A4 format",
+      "page_size_ok": "All pages are A4 format",
+      "margins_invalid": "Invalid margins on pages",
+      "margins_ok": "Margins meet requirements",
+      "font_mismatch": "Main font '{{dominant}}' instead of '{{expected}}'",
+      "font_size_small": "Font size less than {{min_size}}pt",
+      "font_ok": "Font meets requirements",
+      "line_spacing_mismatch": "Line spacing does not match {{expected}}",
+      "line_spacing_ok": "Line spacing meets requirements",
+      "paragraph_indent_missing": "Paragraph indent not found",
+      "paragraph_indent_ok": "Paragraph indent meets requirements",
+      "alignment_invalid": "Text is not justified",
+      "alignment_ok": "Text is justified",
+      "pagination_missing": "Page numbering is missing",
+      "pagination_ok": "Page numbering is present",
+      "pagination_not_centered": "Page numbers are not centered",
+      "pagination_centered_ok": "Page numbers are centered",
+      "structural_elements_invalid": "Structural elements are formatted incorrectly",
+      "structural_elements_ok": "Structural elements are formatted correctly",
+      "sections_not_new_page": "Sections do not start on a new page",
+      "sections_new_page_ok": "Sections start on a new page",
+      "section_numbering_none": "No numbered headings found",
+      "section_numbering_invalid": "Section numbering hierarchy is broken",
+      "section_numbering_ok": "Section numbering is correct",
+      "required_sections_missing": "Required sections are missing",
+      "required_sections_ok": "All required sections are present in correct order",
+      "sections_order_invalid": "Section order is incorrect",
+      "references_ok": "References list is present",
+      "references_missing": "References list not found",
+      "figure_caption_invalid": "Invalid figure caption format ({{count}} items)",
+      "figure_caption_ok": "Figure captions are formatted correctly",
+      "figures_not_found": "No figures found",
+      "figure_numbering_invalid": "Figure numbering sequence is broken",
+      "figure_numbering_ok": "Figure numbering is sequential",
+      "table_caption_invalid": "Invalid table caption format ({{count}} items)",
+      "table_caption_ok": "Table captions are formatted correctly",
+      "tables_not_found": "No tables found",
+      "table_numbering_invalid": "Table numbering sequence is broken",
+      "table_numbering_ok": "Table numbering is sequential",
+      "formulas_not_found": "No numbered formulas found",
+      "formula_numbering_invalid": "Formula numbering sequence is broken",
+      "formula_numbering_ok": "Formula numbering is sequential",
+      "appendices_not_found": "No appendices found",
+      "appendices_labeling_invalid": "Appendix labeling is incorrect",
+      "appendices_labeling_ok": "Appendices are labeled correctly",
+      "stage_descriptions_missing": "Stage descriptions not found",
+      "stage_descriptions_ok": "All stage descriptions are present",
+      "screenshots_insufficient": "Found {{found}} images, minimum {{required}}",
+      "screenshots_ok": "Found {{found}} images",
+      "min_pages_insufficient": "Page count ({{page_count}}) is below minimum ({{min_pages}})",
+      "min_pages_ok": "Page count ({{page_count}}) meets requirements",
+      "font_size_tooltip": "Small font size ({{size}}pt)"
+    },
+    "issues": {
+      "not_uppercase": "not in uppercase",
+      "not_centered": "not centered",
+      "wrong_number": "Numbering broken: {{number}} (p. {{page}})",
+      "skipped_level": "Skipped level before {{number}} (p. {{page}})",
+      "invalid_label": "Invalid letter: {{label}}",
+      "wrong_order": "Expected '{{expected}}', found '{{found}}'",
+      "section_before_after": "'{{before}}' found after '{{after}}'"
+    },
+    "marginSides": {
+      "left": "left",
+      "right": "right",
+      "top": "top",
+      "bottom": "bottom"
+    },
+    "sections": {
+      "title_page": "Title page",
+      "task": "Assignment",
+      "abstract": "Abstract",
+      "toc": "Table of contents",
+      "introduction": "Introduction",
+      "conclusion": "Conclusion",
+      "references": "References"
+    },
+    "richDetail": {
+      "page": "p.",
+      "pages": "Pages with violations",
+      "expected": "Expected",
+      "actual": "Actual",
+      "of": "of",
+      "missingSections": "Missing sections",
+      "missingStages": "Missing stages",
+      "stage": "Stage",
+      "found": "Found",
+      "required": "Required",
+      "images_one": "image",
+      "images_few": "images",
+      "images_many": "images",
+      "pages_one": "page",
+      "pages_few": "pages",
+      "pages_many": "pages"
+    }
   }
 }

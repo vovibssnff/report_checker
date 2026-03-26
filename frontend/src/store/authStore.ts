@@ -1,12 +1,13 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import type { User } from '../types/user';
-import type { DevLoginPayload } from '../types/user';
+import type { DevLoginPayload, DevRegisterPayload } from '../types/user';
 import * as authApi from '../api/authApi';
 
 export class AuthStore {
   user: User | null = null;
   loading = false;
   error: string | null = null;
+  initialized = false;
 
   constructor() {
     makeAutoObservable(this);
@@ -38,6 +39,24 @@ export class AuthStore {
     }
   };
 
+  register = async (payload: DevRegisterPayload) => {
+    this.loading = true;
+    this.error = null;
+    try {
+      const user = await authApi.devRegister(payload);
+      runInAction(() => {
+        this.user = user;
+        this.loading = false;
+      });
+    } catch (e) {
+      runInAction(() => {
+        this.error = e instanceof Error ? e.message : 'Registration failed';
+        this.loading = false;
+      });
+      throw e;
+    }
+  };
+
   fetchMe = async () => {
     this.loading = true;
     try {
@@ -45,11 +64,13 @@ export class AuthStore {
       runInAction(() => {
         this.user = user;
         this.loading = false;
+        this.initialized = true;
       });
     } catch {
       runInAction(() => {
         this.user = null;
         this.loading = false;
+        this.initialized = true;
       });
     }
   };

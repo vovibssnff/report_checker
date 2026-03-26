@@ -9,10 +9,10 @@ if TYPE_CHECKING:
     from app.checkers.pdf_parser import ParsedPDF
 
 _REQUIRED_SECTIONS = [
-    ("титульный лист", ["титульный лист"]),
-    ("содержание", ["содержание", "оглавление"]),
-    ("введение", ["введение"]),
-    ("заключение", ["заключение"]),
+    ("title_page", ["титульный лист"]),
+    ("toc", ["содержание", "оглавление"]),
+    ("introduction", ["введение"]),
+    ("conclusion", ["заключение"]),
 ]
 
 _STAGE_KEYWORDS = ["этап", "раздел", "часть", "stage"]
@@ -34,23 +34,23 @@ class RequiredSectionsRule(BaseRule):
         searchable = all_text + heading_texts
 
         missing: list[str] = []
-        for section_name, keywords in _REQUIRED_SECTIONS:
+        for section_code, keywords in _REQUIRED_SECTIONS:
             found = any(kw in line for kw in keywords for line in searchable)
             if not found:
-                missing.append(section_name)
+                missing.append(section_code)
 
         if missing:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Отсутствуют разделы: {', '.join(missing)}",
+                    message="required_sections_missing",
                     details={"missing_sections": missing},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Все обязательные разделы присутствуют",
+                message="required_sections_ok",
             )
         ]
 
@@ -83,14 +83,14 @@ class StageDescriptionsRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Не найдено описание этапов: {missing_stages}",
+                    message="stage_descriptions_missing",
                     details={"missing_stages": missing_stages},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Описания всех этапов присутствуют",
+                message="stage_descriptions_ok",
             )
         ]
 
@@ -112,13 +112,14 @@ class ScreenshotsRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Найдено {total_images} изображений, минимум {min_images}",
+                    message="screenshots_insufficient",
                     details={"found": total_images, "required": min_images},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message=f"Найдено {total_images} изображений",
+                message="screenshots_ok",
+                details={"found": total_images},
             )
         ]

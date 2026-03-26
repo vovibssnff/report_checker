@@ -38,11 +38,11 @@ class ArabicNumbersRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message="Отсутствует нумерация страниц",
+                    message="pagination_missing",
                     details={"pages_without_numbers": pages_without_numbers},
                 )
             ]
-        return [RuleResult(status=CheckStatus.PASSED, message="Нумерация страниц присутствует")]
+        return [RuleResult(status=CheckStatus.PASSED, message="pagination_ok")]
 
 
 @rule(
@@ -57,6 +57,7 @@ class PageNumberPositionRule(BaseRule):
     async def check(self, pdf: ParsedPDF, config: dict[str, Any]) -> list[RuleResult]:
         skip_first = config.get("skip_first_pages", 2)
         misplaced: list[int] = []
+        misplaced_locations: list[dict[str, Any]] = []
 
         for page in pdf.pages:
             if page.number <= skip_first:
@@ -72,19 +73,30 @@ class PageNumberPositionRule(BaseRule):
                 block_center = (tb.bbox[0] + tb.bbox[2]) / 2
                 if abs(block_center - page_center) > page_w_pt * 0.15:
                     misplaced.append(page.number)
+                    x0, top, x1, bottom = tb.bbox
+                    misplaced_locations.append({
+                        "page": page.number,
+                        "text": tb.text.strip(),
+                        "location": {
+                            "x0": round(x0, 2),
+                            "y0": round(top, 2),
+                            "x1": round(x1, 2),
+                            "y1": round(bottom, 2),
+                        },
+                    })
                     break
 
         if misplaced:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Номера страниц не по центру на страницах: {misplaced}",
-                    details={"pages": misplaced},
+                    message="pagination_not_centered",
+                    details={"pages": misplaced, "locations": misplaced_locations},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message="Номера страниц расположены по центру",
+                message="pagination_centered_ok",
             )
         ]
