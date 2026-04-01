@@ -1,13 +1,16 @@
 from __future__ import annotations
 
 from time import perf_counter
+from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.adapters.driven.observability import get_logger, kv
 from app.adapters.driving.web.request_context import reset_request_id, set_request_id
+
+if TYPE_CHECKING:
+    from fastapi import Request
 
 logger = get_logger(__name__)
 

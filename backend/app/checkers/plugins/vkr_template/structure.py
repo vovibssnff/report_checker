@@ -70,10 +70,12 @@ class RequiredSectionsRule(BaseRule):
         order_violations: list[dict[str, str]] = []
         for i in range(len(found_order) - 1):
             if found_order[i][1] > found_order[i + 1][1]:
-                order_violations.append({
-                    "before": found_order[i][0],
-                    "after": found_order[i + 1][0],
-                })
+                order_violations.append(
+                    {
+                        "before": found_order[i][0],
+                        "after": found_order[i + 1][0],
+                    }
+                )
 
         if order_violations:
             return [

@@ -45,12 +45,7 @@ def configure_logging(level: str) -> None:
                 }
             },
             "formatters": {
-                "standard": {
-                    "format": (
-                        "%(asctime)s %(levelname)s %(name)s "
-                        "request_id=%(request_id)s %(message)s"
-                    )
-                }
+                "standard": {"format": ("%(asctime)s %(levelname)s %(name)s request_id=%(request_id)s %(message)s")}
             },
             "handlers": {
                 "default": {

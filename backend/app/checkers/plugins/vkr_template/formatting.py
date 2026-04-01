@@ -191,17 +191,19 @@ class FontRule(BaseRule):
                 if tb.font_size < min_size - 0.5 and len(tb.text.strip()) > 3:
                     small_font_pages.add(page.number)
                     x0, top, x1, bottom = tb.bbox
-                    small_font_locations.append({
-                        "page": page.number,
-                        "text": tb.text.strip()[:80],
-                        "font_size": round(tb.font_size, 1),
-                        "location": {
-                            "x0": round(x0, 2),
-                            "y0": round(top, 2),
-                            "x1": round(x1, 2),
-                            "y1": round(bottom, 2),
-                        },
-                    })
+                    small_font_locations.append(
+                        {
+                            "page": page.number,
+                            "text": tb.text.strip()[:80],
+                            "font_size": round(tb.font_size, 1),
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
+                        }
+                    )
 
         small_font_locations = _merge_nearby_locations(small_font_locations)
 
@@ -327,16 +329,18 @@ class ParagraphIndentRule(BaseRule):
                     indented_count += 1
                 else:
                     x0, top, x1, bottom = block.bbox
-                    page_bad.append({
-                        "page": page.number,
-                        "text": block.text.strip()[:80],
-                        "location": {
-                            "x0": round(x0, 2),
-                            "y0": round(top, 2),
-                            "x1": round(x1, 2),
-                            "y1": round(bottom, 2),
-                        },
-                    })
+                    page_bad.append(
+                        {
+                            "page": page.number,
+                            "text": block.text.strip()[:80],
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
+                        }
+                    )
 
             if total_paragraphs > 2 and indented_count < total_paragraphs * 0.5:
                 bad_pages.append(page.number)
@@ -385,16 +389,18 @@ class AlignmentRule(BaseRule):
                 for tb in long_blocks:
                     if abs(tb.bbox[2] - max_right) >= 10:
                         x0, top, x1, bottom = tb.bbox
-                        misaligned_locations.append({
-                            "page": page.number,
-                            "text": tb.text.strip()[:80],
-                            "location": {
-                                "x0": round(x0, 2),
-                                "y0": round(top, 2),
-                                "x1": round(x1, 2),
-                                "y1": round(bottom, 2),
-                            },
-                        })
+                        misaligned_locations.append(
+                            {
+                                "page": page.number,
+                                "text": tb.text.strip()[:80],
+                                "location": {
+                                    "x0": round(x0, 2),
+                                    "y0": round(top, 2),
+                                    "x1": round(x1, 2),
+                                    "y1": round(bottom, 2),
+                                },
+                            }
+                        )
 
         if bad_pages:
             return [

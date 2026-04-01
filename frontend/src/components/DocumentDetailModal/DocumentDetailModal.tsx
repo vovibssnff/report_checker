@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { X, ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { X, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -468,9 +468,6 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
     containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 
   }, [numPages]);
-
-  const canPrev = currentPage > 1;
-  const canNext = currentPage < numPages;
 
   const startRect = props.transitionStartRect ?? null;
   const showFlyout = isTransitioning && startRect && !revealPreviewBeforeUnmount;

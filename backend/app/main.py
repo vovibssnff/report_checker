@@ -4,12 +4,12 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 from fastapi import Depends, FastAPI, HTTPException, Request
-from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.adapters.driven.auth.dev_auth_provider import DevAuthProvider
-from app.adapters.driven.observability import configure_logging, get_logger, kv
 from app.adapters.driven.auth.itmo_id_provider import ItmoIdAuthProvider
+from app.adapters.driven.observability import configure_logging, get_logger, kv
 from app.adapters.driven.persistence.database.session import async_session_factory, get_db_session
 from app.adapters.driven.persistence.repositories.check_result_repository import PgCheckResultRepository
 from app.adapters.driven.persistence.repositories.check_rule_repository import PgCheckRuleRepository

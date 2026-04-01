@@ -52,7 +52,7 @@ async def get_current_user(
         if user_id is None:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
     except JWTError as err:
-        logger.warning("auth_invalid_token %s", kv(path=request.url.path))
+        logger.warning("auth_jwt_decode_failed %s", kv(path=request.url.path))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from err
     try:
         return await auth_service.get_current_user(token)

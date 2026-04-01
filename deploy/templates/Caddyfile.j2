@@ -19,11 +19,15 @@ https://{{ ansible_host }} {
 		max_size {{ max_file_size_mb + 5 }}MB
 	}
 
-	reverse_proxy /api/* backend:8000
-	reverse_proxy /internal/* backend:8000
-	reverse_proxy /docs* backend:8000
-	reverse_proxy /openapi.json backend:8000
-	reverse_proxy /health backend:8000
+	@backend path /api/* /internal/* /docs* /openapi.json /health
+	handle @backend {
+		reverse_proxy backend:8000
+	}
+
+	# Serve frontend for all non-API routes, including "/".
+	handle {
+		reverse_proxy frontend:5173
+	}
 }
 
 {% if caddy_domain | default('') | length == 0 %}

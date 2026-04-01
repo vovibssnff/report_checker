@@ -103,7 +103,8 @@ class TestFontRule:
 
         failed = [r for r in results if r.status == CheckStatus.FAILED]
         assert len(failed) >= 1
-        assert "Arial" in failed[0].message
+        assert failed[0].message == "font_mismatch"
+        assert failed[0].details["dominant_font"] == "Arial"
 
     @pytest.mark.asyncio
     async def test_small_font_detected(self, rule, make_text_block, make_parsed_page, make_parsed_pdf):

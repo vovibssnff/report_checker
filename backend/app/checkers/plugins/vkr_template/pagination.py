@@ -74,16 +74,18 @@ class PageNumberPositionRule(BaseRule):
                 if abs(block_center - page_center) > page_w_pt * 0.15:
                     misplaced.append(page.number)
                     x0, top, x1, bottom = tb.bbox
-                    misplaced_locations.append({
-                        "page": page.number,
-                        "text": tb.text.strip(),
-                        "location": {
-                            "x0": round(x0, 2),
-                            "y0": round(top, 2),
-                            "x1": round(x1, 2),
-                            "y1": round(bottom, 2),
-                        },
-                    })
+                    misplaced_locations.append(
+                        {
+                            "page": page.number,
+                            "text": tb.text.strip(),
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
+                        }
+                    )
                     break
 
         if misplaced:

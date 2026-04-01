@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-BASE_URL="${BASE_URL:-https://192.168.122.71}"
+BASE_URL="${BASE_URL:-https://192.168.81.34}"
 case "$BASE_URL" in https://*) CURL_EXTRA="-k" ;; *) CURL_EXTRA="" ;; esac
 
 MINIO_ENDPOINT="${MINIO_ENDPOINT:-}"
