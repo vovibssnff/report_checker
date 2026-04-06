@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import type { DocType, DocumentItem, DocumentStatus } from '../types/document';
 import {
+  deleteDocument,
   getDocumentDownloadUrl,
   listDocuments,
   uploadDocuments,
@@ -91,6 +92,22 @@ export class DocumentsStore {
       runInAction(() => {
         this.uploading = false;
       });
+    }
+  };
+
+  deleteDocument = async (documentId: string): Promise<void> => {
+    this.error = null;
+    try {
+      await deleteDocument(documentId);
+      runInAction(() => {
+        this.documents = this.documents.filter((doc) => doc.id !== documentId);
+      });
+      this._schedulePendingPolling();
+    } catch (e) {
+      runInAction(() => {
+        this.error = e instanceof Error ? e.message : 'Failed to delete document';
+      });
+      throw e;
     }
   };
 

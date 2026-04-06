@@ -90,6 +90,14 @@ export async function getDocument(documentId: string): Promise<BackendDocumentDe
   });
 }
 
+export async function deleteDocument(documentId: string): Promise<void> {
+  await fetchJson<void>(`${API_BASE}/documents/${documentId}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
 export function getDocumentDownloadUrl(documentId: string): string {
   return `${API_BASE}/documents/${documentId}/download`;
 }

@@ -3,12 +3,13 @@ import { createPortal } from 'react-dom';
 import { observer } from 'mobx-react-lite';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronDown, ArrowLeft } from 'lucide-react';
+import { Search, ChevronDown, ArrowLeft, X } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Button from '../Button/Button';
 import CrossIcon from '../icons/CrossIcon/CrossIcon';
 import ItemCard from '../ItemCard/ItemCard';
 import DocumentDetailModal from '../DocumentDetailModal/DocumentDetailModal';
+import { ConfirmDialog } from '../ui/confirm-dialog';
 import type { DocumentItem, DocumentStatus, DocType } from '../../types/document';
 import { documentsStore } from '../../store/documentsStore';
 
@@ -30,6 +31,15 @@ function pluralDocuments(n: number, t: TFunc): string {
   else if (mod10 === 1) form = t('documents.document_one');
   else if (mod10 >= 2 && mod10 <= 4) form = t('documents.document_few');
   else form = t('documents.document_many');
+  return `${n} ${form}`;
+}
+
+function documentsAfterIz(n: number, t: TFunc): string {
+  const mod100 = n % 100;
+  const mod10 = n % 10;
+  const form = mod10 === 1 && mod100 !== 11
+    ? t('documents.document_after_iz_one')
+    : t('documents.document_after_iz_many');
   return `${n} ${form}`;
 }
 
@@ -141,6 +151,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
   const [selectedCard, setSelectedCard] = useState<DocumentItem | null>(null);
   const [transitionStartRect, setTransitionStartRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [transitionPreviewImage, setTransitionPreviewImage] = useState<string | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<DocumentItem | null>(null);
 
   const handleCardClick = (card: DocumentItem, e: React.MouseEvent | React.KeyboardEvent) => {
     if (card.status === 'pending') return;
@@ -168,6 +179,26 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
   const handleTransitionComplete = () => {
     setTransitionStartRect(null);
     setTransitionPreviewImage(null);
+  };
+
+  const handleDeleteDocumentClick = (card: DocumentItem, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!card.id) return;
+    setDocumentToDelete(card);
+  };
+
+  const handleDeleteDocumentConfirm = async () => {
+    if (!documentToDelete?.id) return;
+    try {
+      await documentsStore.deleteDocument(documentToDelete.id);
+      if (selectedCard?.id === documentToDelete.id) {
+        handleCloseModal();
+      }
+      setDocumentToDelete(null);
+    } catch {
+      // keep silent here; store.error can be shown by parent if needed
+    }
   };
 
   useEffect(() => {
@@ -320,7 +351,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                 <div className="flex flex-col gap-1 shrink-0 pb-8 sticky top-0 w-full bg-linear-to-b from-70% from-white to-transparent z-10 px-5">
                   <h1 className="text-2xl pb-4">
                     {t('documents.checkedOfTotal', { checked: readinessCounts.checked, total: documentsStore.documents.length })}{' '}
-                    {pluralDocuments(documentsStore.documents.length, t).replace(/^\d+\s/, '')}
+                    {documentsAfterIz(documentsStore.documents.length, t).replace(/^\d+\s/, '')}
                   </h1>
 
                   <div className="flex flex-row gap-4 overflow-x-auto no-scrollbar">
@@ -359,13 +390,21 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             {group.cards.map((card, i) => (
                               <div
-                                key={i}
+                                key={card.id ?? `${card.title}-${i}`}
                                 role={card.status !== 'pending' ? 'button' : undefined}
                                 tabIndex={card.status !== 'pending' ? 0 : undefined}
                                 onClick={(e) => handleCardClick(card, e)}
                                 onKeyDown={card.status !== 'pending' ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(card, e); } } : undefined}
-                                className={card.status !== 'pending' ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-2 rounded-[26px]' : 'rounded-[26px]'}
+                                className={`group relative ${card.status !== 'pending' ? 'cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-black/20 focus-visible:ring-offset-2 rounded-[26px]' : 'rounded-[26px]'}`}
                               >
+                                <button
+                                  type="button"
+                                  onClick={(e) => handleDeleteDocumentClick(card, e)}
+                                  className="absolute -right-1.5 -top-1.5 z-20 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-gray-500 shadow-lg opacity-0 transition-all group-hover:opacity-100 focus-visible:opacity-100 cursor-pointer"
+                                  aria-label={t('documents.deleteAction')}
+                                >
+                                  <X className="size-3" />
+                                </button>
                                 <ItemCard
                                   title={card.title}
                                   type={t(`documents.${card.docType}`)}
@@ -581,6 +620,16 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
         transitionStartRect={transitionStartRect}
         transitionPreviewImage={transitionPreviewImage}
         onTransitionComplete={handleTransitionComplete}
+      />
+      <ConfirmDialog
+        open={documentToDelete !== null}
+        onClose={() => setDocumentToDelete(null)}
+        onConfirm={handleDeleteDocumentConfirm}
+        title={t('documents.deleteConfirmTitle')}
+        description={t('documents.deleteConfirmDescription', { title: documentToDelete?.title ?? '' })}
+        confirmLabel={t('documents.deleteAction')}
+        cancelLabel={t('common.close')}
+        variant="danger"
       />
     </>
   );
