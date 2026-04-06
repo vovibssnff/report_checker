@@ -29,6 +29,7 @@ class DocumentResponse(BaseModel):
     source: str
     uploaded_at: datetime
     checked_at: datetime | None
+    page_count: int | None = None
 
 
 class DocumentDetailResponse(DocumentResponse):

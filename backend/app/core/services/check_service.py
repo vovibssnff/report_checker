@@ -58,8 +58,9 @@ class CheckService(DocumentCheckUseCase):
         )
 
         checks_started = perf_counter()
-        outputs = await self._checker_engine.run_checks(pdf_bytes, doc.document_type)
+        outputs, page_count = await self._checker_engine.run_checks(pdf_bytes, doc.document_type)
         checks_elapsed_ms = round((perf_counter() - checks_started) * 1000, 2)
+        doc.page_count = page_count
         self._logger.info(
             "checker_engine_completed %s",
             kv(document_id=document_id, rules_count=len(outputs), duration_ms=checks_elapsed_ms),

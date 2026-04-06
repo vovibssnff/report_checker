@@ -197,10 +197,12 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
                   <td className="pr-4 text-gray-500">{t('documents.type')}</td>
                   <td className="text-right">{props.type}</td>
                 </tr>
-                <tr>
-                  <td className="pr-4 text-gray-500">{t('documents.pages')}</td>
-                  <td className="text-right">{props.pages}</td>
-                </tr>
+                {props.pages > 0 && (
+                  <tr>
+                    <td className="pr-4 text-gray-500">{t('documents.pages')}</td>
+                    <td className="text-right">{props.pages}</td>
+                  </tr>
+                )}
                 {props.author && (
                   <tr>
                     <td className="pr-4 text-gray-500">{t('documents.author')}</td>

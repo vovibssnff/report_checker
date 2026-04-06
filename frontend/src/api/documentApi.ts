@@ -12,6 +12,7 @@ export interface BackendDocumentResponse {
   source: string;
   uploaded_at: string;
   checked_at: string | null;
+  page_count: number | null;
 }
 
 export interface BackendCheckResultResponse {

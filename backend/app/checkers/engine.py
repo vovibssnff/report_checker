@@ -30,7 +30,8 @@ class CheckerEngine:
         self._rule_repo = rule_repo
         self._logger = get_logger(__name__)
 
-    async def run_checks(self, pdf_bytes: bytes, doc_type: DocumentType) -> list[CheckOutput]:
+    async def run_checks(self, pdf_bytes: bytes, doc_type: DocumentType) -> tuple[list[CheckOutput], int]:
+        """Return (check_outputs, page_count)."""
         started = perf_counter()
         parsed = parse_pdf(pdf_bytes)
 
@@ -97,4 +98,4 @@ class CheckerEngine:
             "checker_run_completed %s",
             kv(document_type=doc_type, executed_rules=len(outputs), duration_ms=elapsed_ms),
         )
-        return list(outputs)
+        return list(outputs), parsed.page_count

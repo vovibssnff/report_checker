@@ -21,3 +21,4 @@ class Document:
     uploaded_at: datetime
     checked_at: datetime | None
     user_id: UserId | None
+    page_count: int | None = None

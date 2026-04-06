@@ -87,14 +87,17 @@ class TestRunChecksForDocument:
         doc_repo.get_by_id = AsyncMock(return_value=doc)
         storage.download_file = Mock(return_value=_async_iter([b"pdf-bytes"]))
         checker_engine.run_checks = AsyncMock(
-            return_value=[
-                CheckOutput(
-                    rule_code="vkr.fmt.page_size",
-                    rule_name="Page size",
-                    severity=Severity.ERROR,
-                    results=[RuleResult(status=CheckStatus.PASSED, message="OK")],
-                ),
-            ]
+            return_value=(
+                [
+                    CheckOutput(
+                        rule_code="vkr.fmt.page_size",
+                        rule_name="Page size",
+                        severity=Severity.ERROR,
+                        results=[RuleResult(status=CheckStatus.PASSED, message="OK")],
+                    ),
+                ],
+                5,
+            )
         )
 
         results = await service.run_checks_for_document(doc.id)
@@ -102,6 +105,7 @@ class TestRunChecksForDocument:
         assert len(results) == 1
         assert results[0].status == CheckStatus.PASSED
         assert doc.status == DocumentStatus.PASSED
+        assert doc.page_count == 5
         check_result_repo.replace_for_document.assert_awaited_once()
         assert doc_repo.update.await_count == 2
 
@@ -111,14 +115,17 @@ class TestRunChecksForDocument:
         doc_repo.get_by_id = AsyncMock(return_value=doc)
         storage.download_file = Mock(return_value=_async_iter([b"pdf"]))
         checker_engine.run_checks = AsyncMock(
-            return_value=[
-                CheckOutput(
-                    rule_code="vkr.fmt.font",
-                    rule_name="Font",
-                    severity=Severity.ERROR,
-                    results=[RuleResult(status=CheckStatus.FAILED, message="Wrong font")],
-                ),
-            ]
+            return_value=(
+                [
+                    CheckOutput(
+                        rule_code="vkr.fmt.font",
+                        rule_name="Font",
+                        severity=Severity.ERROR,
+                        results=[RuleResult(status=CheckStatus.FAILED, message="Wrong font")],
+                    ),
+                ],
+                3,
+            )
         )
 
         results = await service.run_checks_for_document(doc.id)
@@ -132,14 +139,17 @@ class TestRunChecksForDocument:
         doc_repo.get_by_id = AsyncMock(return_value=doc)
         storage.download_file = Mock(return_value=_async_iter([b"pdf"]))
         checker_engine.run_checks = AsyncMock(
-            return_value=[
-                CheckOutput(
-                    rule_code="vkr.fmt.spacing",
-                    rule_name="Spacing",
-                    severity=Severity.WARNING,
-                    results=[RuleResult(status=CheckStatus.FAILED, message="Bad spacing")],
-                ),
-            ]
+            return_value=(
+                [
+                    CheckOutput(
+                        rule_code="vkr.fmt.spacing",
+                        rule_name="Spacing",
+                        severity=Severity.WARNING,
+                        results=[RuleResult(status=CheckStatus.FAILED, message="Bad spacing")],
+                    ),
+                ],
+                10,
+            )
         )
 
         await service.run_checks_for_document(doc.id)
@@ -151,7 +161,7 @@ class TestRunChecksForDocument:
         doc = _make_document()
         doc_repo.get_by_id = AsyncMock(return_value=doc)
         storage.download_file = Mock(return_value=_async_iter([b"pdf"]))
-        checker_engine.run_checks = AsyncMock(return_value=[])
+        checker_engine.run_checks = AsyncMock(return_value=([], 0))
 
         statuses_seen: list[DocumentStatus] = []
         original_update = doc_repo.update
@@ -171,7 +181,7 @@ class TestRunChecksForDocument:
         doc = _make_document()
         doc_repo.get_by_id = AsyncMock(return_value=doc)
         storage.download_file = Mock(return_value=_async_iter([b"chunk1", b"chunk2"]))
-        checker_engine.run_checks = AsyncMock(return_value=[])
+        checker_engine.run_checks = AsyncMock(return_value=([], 0))
 
         await service.run_checks_for_document(doc.id)
 

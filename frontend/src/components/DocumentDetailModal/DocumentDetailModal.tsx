@@ -274,6 +274,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
   const [computedReport, setComputedReport] = useState<DocumentReport | undefined>(props.report);
+  const [backendDocType, setBackendDocType] = useState<string | null>(null);
 
   useEffect(() => {
     if (props.transitionStartRect) {
@@ -306,6 +307,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
       setReportLoading(false);
       setReportError(null);
       setComputedReport(props.report);
+      setBackendDocType(null);
       if (pdfObjectUrl) {
         URL.revokeObjectURL(pdfObjectUrl);
         setPdfObjectUrl(null);
@@ -377,6 +379,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
         const detail = await getDocument(props.documentId!);
         if (cancelled) return;
         setComputedReport(mapCheckResultsToDocumentReport(detail));
+        setBackendDocType(detail.document_type);
       } catch (e) {
         if (cancelled) return;
         setComputedReport(undefined);
@@ -472,6 +475,14 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
   const startRect = props.transitionStartRect ?? null;
   const showFlyout = isTransitioning && startRect && !revealPreviewBeforeUnmount;
   const reportToShow = computedReport ?? props.report;
+
+  const BACKEND_DOC_TYPE_TO_KEY: Record<string, string> = {
+    vkr_template: 'documents.masters',
+    practice_report: 'documents.bachelors',
+  };
+  const resolvedTypeLabel = backendDocType && BACKEND_DOC_TYPE_TO_KEY[backendDocType]
+    ? t(BACKEND_DOC_TYPE_TO_KEY[backendDocType])
+    : props.typeLabel;
 
   const allHighlights = useMemo<TextHighlight[]>(() => {
     if (!reportToShow) return [];
@@ -704,7 +715,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                     <tbody>
                       <tr>
                         <td className="pr-4 text-gray-500 text-xs uppercase">{t('documents.type_full')}</td>
-                        <td className="text-right">{props.typeLabel}</td>
+                        <td className="text-right">{resolvedTypeLabel}</td>
                       </tr>
                       <tr>
                         <td className="pr-4 text-gray-500 text-xs uppercase">{t('documents.pages_full')}</td>

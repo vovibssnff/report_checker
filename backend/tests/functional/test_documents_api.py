@@ -164,14 +164,17 @@ async def test_run_checks(
     from app.checkers.base import RuleResult
     from app.checkers.engine import CheckOutput
 
-    checker_engine.run_checks.return_value = [
-        CheckOutput(
-            rule_code="fmt_font",
-            rule_name="Font Check",
-            severity=Severity.ERROR,
-            results=[RuleResult(status=CheckStatus.PASSED, message="Font OK")],
-        ),
-    ]
+    checker_engine.run_checks.return_value = (
+        [
+            CheckOutput(
+                rule_code="fmt_font",
+                rule_name="Font Check",
+                severity=Severity.ERROR,
+                results=[RuleResult(status=CheckStatus.PASSED, message="Font OK")],
+            ),
+        ],
+        5,
+    )
 
     resp = await auth_client.post(f"/api/v1/documents/{doc_id}/checks")
     assert resp.status_code == 201

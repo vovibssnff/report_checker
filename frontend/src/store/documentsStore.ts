@@ -30,7 +30,7 @@ function mapBackendDocToItem(d: BackendDocumentResponse): DocumentItem {
   return {
     id: d.id,
     title: d.filename,
-    pages: 0, // will be updated by DocumentDetailModal when rendering PDF
+    pages: d.page_count ?? 0,
     status,
     createdAt,
     pdfUrl: getDocumentDownloadUrl(d.id),

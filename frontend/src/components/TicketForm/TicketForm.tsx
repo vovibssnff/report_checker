@@ -490,7 +490,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                     value={authorSearch}
                     onChange={(e) => setAuthorSearch(e.target.value)}
                     placeholder={t('documents.searchByAuthor')}
-                    className="w-full h-9 pl-9 pr-3 text-sm rounded-full bg-white outline-none placeholder:text-gray-400 focus:bg-[rgba(0,0,0,0.06)] transition-colors"
+                    className="w-full h-9 pl-9 pr-3 text-sm rounded-full bg-white outline-none placeholder:text-gray-400 transition-colors"
                   />
                 </div>
                 <div className="relative shrink-0" ref={docTypeRef}>
