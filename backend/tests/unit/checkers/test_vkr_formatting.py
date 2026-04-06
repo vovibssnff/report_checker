@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from app.checkers.plugins.vkr_template.formatting import FontRule, PageSizeRule
+from app.checkers.pdf_parser import ParsedPage, TableInfo
+from app.checkers.plugins.vkr_template.formatting import AlignmentRule, FontRule, PageSizeRule, ParagraphIndentRule
 from app.core.domain.value_objects import CheckStatus
 
 
@@ -148,4 +149,80 @@ class TestFontRule:
 
         results = await rule.check(pdf, {})
 
+        assert results[0].status == CheckStatus.PASSED
+
+
+class TestParagraphIndentRule:
+    @pytest.fixture()
+    def rule(self):
+        return ParagraphIndentRule()
+
+    @pytest.mark.asyncio
+    async def test_ignores_blocks_inside_tables(self, rule, make_text_block, make_parsed_pdf):
+        table_bbox = (80.0, 80.0, 520.0, 200.0)
+        blocks = [
+            make_text_block(
+                text="Text in table row one long enough to be processed",
+                bbox=(100.0, 100.0, 500.0, 114.0),
+            ),
+            make_text_block(
+                text="Text in table row two long enough to be processed",
+                bbox=(100.0, 125.0, 500.0, 139.0),
+            ),
+            make_text_block(
+                text="Text in table row three long enough to be processed",
+                bbox=(100.0, 150.0, 500.0, 164.0),
+            ),
+        ]
+        page = ParsedPage(
+            number=1,
+            width_mm=210.0,
+            height_mm=297.0,
+            text_blocks=blocks,
+            tables=[TableInfo(page_number=1, bbox=table_bbox, rows=3, cols=2)],
+            lines=[],
+        )
+        pdf = make_parsed_pdf(pages=[page])
+
+        results = await rule.check(pdf, {"indent_mm": 12.5, "tolerance_mm": 3})
+
+        assert len(results) == 1
+        assert results[0].status == CheckStatus.PASSED
+
+
+class TestAlignmentRule:
+    @pytest.fixture()
+    def rule(self):
+        return AlignmentRule()
+
+    @pytest.mark.asyncio
+    async def test_ignores_blocks_inside_tables(self, rule, make_text_block, make_parsed_pdf):
+        table_bbox = (80.0, 80.0, 520.0, 220.0)
+        blocks = [
+            make_text_block(
+                text="First table row content that is clearly longer than thirty chars",
+                bbox=(100.0, 95.0, 430.0, 110.0),
+            ),
+            make_text_block(
+                text="Second table row content that is clearly longer than thirty chars",
+                bbox=(100.0, 125.0, 470.0, 140.0),
+            ),
+            make_text_block(
+                text="Third table row content that is clearly longer than thirty chars",
+                bbox=(100.0, 155.0, 390.0, 170.0),
+            ),
+        ]
+        page = ParsedPage(
+            number=1,
+            width_mm=210.0,
+            height_mm=297.0,
+            text_blocks=blocks,
+            tables=[TableInfo(page_number=1, bbox=table_bbox, rows=3, cols=2)],
+            lines=[],
+        )
+        pdf = make_parsed_pdf(pages=[page])
+
+        results = await rule.check(pdf, {})
+
+        assert len(results) == 1
         assert results[0].status == CheckStatus.PASSED

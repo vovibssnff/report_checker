@@ -28,6 +28,8 @@ function mapBackendDocToItem(d: BackendDocumentResponse): DocumentItem {
   const docType = mapBackendDocTypeToFrontend(d.document_type);
   const status = mapBackendStatusToFrontend(d.status);
 
+  const normalizedAuthor = d.source && d.source !== 'user_upload' ? d.source : 'Не указан';
+
   return {
     id: d.id,
     title: d.filename,
@@ -35,7 +37,7 @@ function mapBackendDocToItem(d: BackendDocumentResponse): DocumentItem {
     status,
     createdAt,
     pdfUrl: getDocumentDownloadUrl(d.id),
-    author: d.source || '—',
+    author: normalizedAuthor,
     docType,
   };
 }

@@ -10,6 +10,7 @@ import CrossIcon from '../icons/CrossIcon/CrossIcon';
 import ItemCard from '../ItemCard/ItemCard';
 import DocumentDetailModal from '../DocumentDetailModal/DocumentDetailModal';
 import { ConfirmDialog } from '../ui/confirm-dialog';
+import { Spinner } from '../ui/spinner';
 import type { DocumentItem, DocumentStatus, DocType } from '../../types/document';
 import { documentsStore } from '../../store/documentsStore';
 
@@ -334,6 +335,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
         docTypeFilter === 'bachelors' ? 'practice_report' : 'vkr_template';
       await documentsStore.uploadDocument(selectedFile, backendDocumentType);
       setSelectedFile(null);
+      setCurrentStep(0);
     } catch {
       // keep file on error
     }
@@ -489,7 +491,14 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                         size="m"
                         className="shrink-0 transition-all duration-150 relative z-0"
                       >
-                        {uploading ? t('tickets.working') : t('tickets.send')}
+                        {uploading ? (
+                          <span className="inline-flex items-center gap-2">
+                            <Spinner className="size-4 opacity-90" />
+                            {t('tickets.working')}
+                          </span>
+                        ) : (
+                          t('tickets.send')
+                        )}
                       </Button>
                     </>
                   )}

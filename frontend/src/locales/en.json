@@ -227,6 +227,7 @@
       "section_numbering_invalid": "Section numbering hierarchy is broken",
       "section_numbering_ok": "Section numbering is correct",
       "required_sections_missing": "Required sections are missing",
+      "required_sections_format_invalid": "Required sections were found, but some headings are formatted incorrectly",
       "required_sections_ok": "All required sections are present in correct order",
       "sections_order_invalid": "Section order is incorrect",
       "references_ok": "References list is present",
@@ -258,8 +259,10 @@
     "issues": {
       "not_uppercase": "not in uppercase",
       "not_centered": "not centered",
+      "not_right_aligned": "not right-aligned",
       "wrong_number": "Numbering broken: {{number}} (p. {{page}})",
       "skipped_level": "Skipped level before {{number}} (p. {{page}})",
+      "missing_dot_after_number": "A dot is required after section number: {{number}} (p. {{page}})",
       "invalid_label": "Invalid letter: {{label}}",
       "wrong_order": "Expected '{{expected}}', found '{{found}}'",
       "section_before_after": "'{{before}}' found after '{{after}}'"

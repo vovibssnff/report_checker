@@ -45,6 +45,47 @@ class TestAppendixLabelingRule:
         assert results[0].status == CheckStatus.FAILED
         assert results[0].details["issues"][0]["type"] == "invalid_label"
 
+    @pytest.mark.asyncio
+    async def test_detects_spaced_letters_appendix(self, rule, make_parsed_page, make_parsed_pdf) -> None:
+        pages = [make_parsed_page(number=1, lines=["П Р И Л О Ж Е Н И Е   А"])]
+        pdf = make_parsed_pdf(pages=pages)
+
+        results = await rule.check(pdf, {})
+
+        assert results[0].status == CheckStatus.PASSED
+        assert results[0].message == "appendices_labeling_ok"
+
+    @pytest.mark.asyncio
+    async def test_detects_appendix_from_text_blocks_when_lines_empty(
+        self, rule, make_text_block, make_parsed_page, make_parsed_pdf
+    ) -> None:
+        blocks = [make_text_block(text="ПРИЛОЖЕНИЕ А", is_bold=True)]
+        page = make_parsed_page(number=1, text_blocks=blocks, lines=[])
+        pdf = make_parsed_pdf(pages=[page])
+
+        results = await rule.check(pdf, {})
+
+        assert results[0].status == CheckStatus.PASSED
+        assert results[0].message == "appendices_labeling_ok"
+
+    @pytest.mark.asyncio
+    async def test_ignores_appendix_mentions_in_plain_text(self, rule, make_parsed_page, make_parsed_pdf) -> None:
+        pages = [
+            make_parsed_page(
+                number=1,
+                lines=[
+                    "В приложении А приведены дополнительные материалы.",
+                    "См. приложение Б в конце работы.",
+                ],
+            )
+        ]
+        pdf = make_parsed_pdf(pages=pages)
+
+        results = await rule.check(pdf, {})
+
+        assert results[0].status == CheckStatus.PASSED
+        assert results[0].message == "appendices_not_found"
+
 
 class TestFormulaNumberingRule:
     @pytest.fixture()
@@ -85,3 +126,21 @@ class TestFormulaNumberingRule:
         assert results[0].status == CheckStatus.FAILED
         assert results[0].message == "formula_numbering_invalid"
         assert results[0].details["gaps_at"] == [3]
+
+    @pytest.mark.asyncio
+    async def test_ignores_plain_text_references_in_parentheses(self, rule, make_parsed_page, make_parsed_pdf) -> None:
+        pages = [
+            make_parsed_page(
+                number=1,
+                lines=[
+                    "Описание метода приведено в разделе (1)",
+                    "Подробности см. в приложении (2)",
+                ],
+            ),
+        ]
+        pdf = make_parsed_pdf(pages=pages)
+
+        results = await rule.check(pdf, {})
+
+        assert results[0].status == CheckStatus.PASSED
+        assert results[0].message == "formulas_not_found"

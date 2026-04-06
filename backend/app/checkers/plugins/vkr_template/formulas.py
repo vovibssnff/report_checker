@@ -10,6 +10,18 @@ if TYPE_CHECKING:
     from app.checkers.pdf_parser import ParsedPDF
 
 _FORMULA_NUMBER = re.compile(r"\((\d+(?:\.\d+)*)\)\s*$")
+_MATH_OPERATOR = re.compile(r"(=|[+\-*/^]|[<>≤≥±×÷])")
+_FUNCTION_CALL = re.compile(r"\b[а-яa-z]\s*\([^)]{1,40}\)", re.IGNORECASE)
+
+
+def _looks_like_formula_prefix(prefix: str) -> bool:
+    text = prefix.strip()
+    if not text:
+        return False
+    if _MATH_OPERATOR.search(text):
+        return True
+    # Accept function-like expressions such as f(x), g(t), phi(n).
+    return bool(_FUNCTION_CALL.search(text))
 
 
 @rule(
@@ -27,6 +39,9 @@ class FormulaNumberingRule(BaseRule):
             for line in page.lines:
                 match = _FORMULA_NUMBER.search(line)
                 if match:
+                    prefix = line[: match.start()]
+                    if not _looks_like_formula_prefix(prefix):
+                        continue
                     parts = match.group(1).split(".")
                     numbers.append(int(parts[-1]))
 

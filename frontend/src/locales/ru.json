@@ -230,6 +230,7 @@
       "section_numbering_invalid": "Нарушена иерархическая нумерация разделов",
       "section_numbering_ok": "Нумерация разделов корректна",
       "required_sections_missing": "Отсутствуют обязательные разделы",
+      "required_sections_format_invalid": "Обязательные разделы найдены, но часть из них оформлена некорректно",
       "required_sections_ok": "Все обязательные разделы присутствуют в правильном порядке",
       "sections_order_invalid": "Нарушен порядок разделов",
       "references_ok": "Список литературы присутствует",
@@ -261,8 +262,10 @@
     "issues": {
       "not_uppercase": "Не в верхнем регистре",
       "not_centered": "Не по центру",
+      "not_right_aligned": "Не по правому краю",
       "wrong_number": "Нарушена нумерация: {{number}} (стр. {{page}})",
       "skipped_level": "Пропущен уровень перед {{number}} (стр. {{page}})",
+      "missing_dot_after_number": "После номера раздела нужна точка: {{number}} (стр. {{page}})",
       "invalid_label": "Недопустимая буква: {{label}}",
       "wrong_order": "Ожидалось «{{expected}}», найдено «{{found}}»",
       "section_before_after": "«{{before}}» найден после «{{after}}»"

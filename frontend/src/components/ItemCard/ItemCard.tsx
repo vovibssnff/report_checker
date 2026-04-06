@@ -193,19 +193,19 @@ const ItemCard: React.FC<ItemCardProps> = (props) => {
             }
             <table className="w-full text-sm border-separate border-spacing-y-1.5">
               <tbody>
-                <tr>
+                {/* <tr>
                   <td className="pr-4 text-gray-500">{t('documents.type')}</td>
                   <td className="text-right">{props.type}</td>
-                </tr>
+                </tr> */}
                 {props.pages > 0 && (
                   <tr>
-                    <td className="pr-4 text-gray-500">{t('documents.pages')}</td>
+                    <td className="text-xs pr-4 text-gray-500 uppercase">{t('documents.pages')}</td>
                     <td className="text-right">{props.pages}</td>
                   </tr>
                 )}
                 {props.author && (
                   <tr>
-                    <td className="pr-4 text-gray-500">{t('documents.author')}</td>
+                    <td className="text-xs pr-4 text-gray-500 uppercase">{t('documents.author')}</td>
                     <td className="text-right">{props.author}</td>
                   </tr>
                 )}

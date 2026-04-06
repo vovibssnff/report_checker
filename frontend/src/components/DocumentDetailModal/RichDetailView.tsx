@@ -297,7 +297,7 @@ const MarginDiagram: React.FC<{
         <div
           className="absolute superellipse left-1 bottom-1 flex items-center justify-center"
           style={{
-            width: '30%',
+            width: '25%',
             top: sides.has('top') ? 'calc(22% + 8px)' : '4px',
             bottom: sides.has('bottom') ? 'calc(16% + 8px)' : '4px',
             backgroundColor: BAD,
@@ -319,7 +319,7 @@ const MarginDiagram: React.FC<{
         <div
           className="absolute superellipse right-1 flex items-center justify-center"
           style={{
-            width: '14%',
+            width: '25%',
             top: sides.has('top') ? 'calc(22% + 8px)' : '4px',
             bottom: sides.has('bottom') ? 'calc(16% + 8px)' : '4px',
             backgroundColor: BAD,

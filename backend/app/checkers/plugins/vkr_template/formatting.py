@@ -8,9 +8,19 @@ from app.checkers.base import BaseRule, RuleResult, rule
 from app.core.domain.value_objects import CheckStatus, DocumentType, Severity
 
 if TYPE_CHECKING:
-    from app.checkers.pdf_parser import ParsedPDF
+    from app.checkers.pdf_parser import ParsedPDF, ParsedPage
 
 _PTS_TO_MM = 1 / 2.835
+
+
+def _is_block_inside_table(block_bbox: tuple[float, float, float, float], table_bbox: tuple[float, float, float, float]) -> bool:
+    bx0, by0, bx1, by1 = block_bbox
+    tx0, ty0, tx1, ty1 = table_bbox
+    return bx0 >= tx0 and bx1 <= tx1 and by0 >= ty0 and by1 <= ty1
+
+
+def _is_text_block_in_any_table(page: ParsedPage, block_bbox: tuple[float, float, float, float]) -> bool:
+    return any(_is_block_inside_table(block_bbox, table.bbox) for table in page.tables)
 
 
 def _merge_nearby_locations(
@@ -306,7 +316,10 @@ class ParagraphIndentRule(BaseRule):
         bad_indent_locations: list[dict[str, Any]] = []
 
         for page in pdf.pages:
-            blocks = sorted(page.text_blocks, key=lambda b: (b.bbox[1], b.bbox[0]))
+            blocks = sorted(
+                [b for b in page.text_blocks if not _is_text_block_in_any_table(page, b.bbox)],
+                key=lambda b: (b.bbox[1], b.bbox[0]),
+            )
             if len(blocks) < 3:
                 continue
 
@@ -377,7 +390,11 @@ class AlignmentRule(BaseRule):
         for page in pdf.pages:
             if not page.text_blocks:
                 continue
-            long_blocks = [tb for tb in page.text_blocks if len(tb.text.strip()) > 30 and not tb.is_bold]
+            long_blocks = [
+                tb
+                for tb in page.text_blocks
+                if len(tb.text.strip()) > 30 and not tb.is_bold and not _is_text_block_in_any_table(page, tb.bbox)
+            ]
             if len(long_blocks) < 3:
                 continue
 

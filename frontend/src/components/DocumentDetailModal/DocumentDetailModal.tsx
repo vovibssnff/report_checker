@@ -258,6 +258,8 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
   const [previewTopPad, setPreviewTopPad] = useState(24);
   const [pdfPageWidthPt, setPdfPageWidthPt] = useState(595);
   const [activeHighlights, setActiveHighlights] = useState<TextHighlight[]>([]);
+  const thumbsStackRef = useRef<HTMLDivElement>(null);
+  const [thumbPageWidth, setThumbPageWidth] = useState(80);
 
   const handleHighlightHover = useCallback((hl: TextHighlight[]) => setActiveHighlights(hl), []);
   const handleHighlightLeave = useCallback(() => setActiveHighlights([]), []);
@@ -296,6 +298,23 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
     window.addEventListener('resize', measure);
     return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
   }, [props.open, hasPdf]);
+
+  useEffect(() => {
+    if (!props.open || !thumbsStackRef.current || !hasPdf || numPages <= 0) return;
+    const el = thumbsStackRef.current;
+    const measure = () => {
+      const w = el.getBoundingClientRect().width;
+      if (w > 16) setThumbPageWidth(Math.floor(w));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [props.open, hasPdf, numPages]);
 
   useEffect(() => {
     if (!props.open) {
@@ -576,7 +595,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                 <div className="sticky top-0 h-dvh flex flex-col">
                   <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin" style={{ paddingTop: previewTopPad, paddingBottom: 24 }}>
                     <Document file={pdfObjectUrl ?? fileUrl} loading={null} error={null}>
-                      <div className="flex flex-col items-center gap-2 py-0.5 px-1">
+                      <div ref={thumbsStackRef} className="w-full flex flex-col items-center gap-2 py-0.5 px-1">
                         {Array.from({ length: numPages }, (_, i) => i + 1).map((pageNum) => (
                           <button
                             key={pageNum}
@@ -599,7 +618,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                             >
                               <Page
                                 pageNumber={pageNum}
-                                width={80}
+                                width={thumbPageWidth}
                                 renderTextLayer={false}
                                 renderAnnotationLayer={false}
                                 loading={<div className="bg-gray-100 size-full" />}
@@ -713,10 +732,10 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                   <p className="font-medium text-2xl break-all">{props.title}</p>
                   <table className="w-full text-sm border-separate border-spacing-y-1.5">
                     <tbody>
-                      <tr>
+                      {/* <tr>
                         <td className="pr-4 text-gray-500 text-xs uppercase">{t('documents.type_full')}</td>
                         <td className="text-right">{resolvedTypeLabel}</td>
-                      </tr>
+                      </tr> */}
                       <tr>
                         <td className="pr-4 text-gray-500 text-xs uppercase">{t('documents.pages_full')}</td>
                         <td className="text-right">{numPages > 0 ? numPages : props.pages}</td>
