@@ -8,6 +8,39 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores(['dist']),
   {
+    files: ['**/*.{js,jsx}'],
+    extends: [
+      js.configs.recommended,
+      reactHooks.configs.flat.recommended,
+      reactRefresh.configs.vite,
+    ],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.jest,
+      },
+    },
+  },
+  {
+    files: ['createBlock.js', 'createIcon.js'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
+  {
+    files: ['src/**/*.{js,jsx}'],
+    rules: {
+      'no-unused-vars': 'off',
+    },
+  },
+  {
     files: ['**/*.{ts,tsx}'],
     extends: [
       js.configs.recommended,
