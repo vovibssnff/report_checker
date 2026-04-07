@@ -1,0 +1,30 @@
+import React from 'react';
+import type { IconProps } from '../IconProps';
+
+interface PlusIconProps extends IconProps { }
+
+const PlusIcon: React.FC<PlusIconProps> = ({
+  size = '24px',
+  fill = 'black',
+  className = '',
+  ...props
+}) => {
+  return (
+    <svg
+      width={size}
+      height={size}
+      fill={fill}
+      className={`plus-icon ${className}`}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 20.918 20.5762"
+      {...props}
+    >
+      <g>
+        <rect height="20.5762" opacity="0" width="20.918" x="0" y="0" />
+        <path d="M11.2305 19.5996L11.2305 0.957031C11.2305 0.439453 10.8008 0 10.2734 0C9.75586 0 9.32617 0.439453 9.32617 0.957031L9.32617 19.5996C9.32617 20.1172 9.75586 20.5566 10.2734 20.5566C10.8008 20.5566 11.2305 20.1172 11.2305 19.5996ZM0.957031 11.2305L19.5996 11.2305C20.1172 11.2305 20.5566 10.8008 20.5566 10.2832C20.5566 9.75586 20.1172 9.32617 19.5996 9.32617L0.957031 9.32617C0.439453 9.32617 0 9.75586 0 10.2832C0 10.8008 0.439453 11.2305 0.957031 11.2305Z" fill={fill} />
+      </g>
+    </svg>
+  );
+};
+
+export default PlusIcon;

@@ -48,6 +48,7 @@ class PgUserRepository(UserRepository):
             email=entity.email,
             name=entity.name,
             role=entity.role.value,
+            password_hash=entity.password_hash,
             itmo_id=entity.itmo_id,
             created_at=entity.created_at,
         )
@@ -61,4 +62,5 @@ class PgUserRepository(UserRepository):
             role=UserRole(model.role),
             itmo_id=model.itmo_id,
             created_at=model.created_at,
+            password_hash=model.password_hash,
         )

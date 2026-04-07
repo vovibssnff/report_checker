@@ -23,16 +23,19 @@ if TYPE_CHECKING:
 
 
 async def test_internal_upload_and_check(client: httpx.AsyncClient, checker_engine):
-    checker_engine.run_checks.return_value = [
-        CheckOutput(
-            rule_code="fmt_margins",
-            rule_name="Margin Check",
-            severity=Severity.WARNING,
-            results=[
-                RuleResult(status=CheckStatus.FAILED, message="Left margin too small"),
-            ],
-        ),
-    ]
+    checker_engine.run_checks.return_value = (
+        [
+            CheckOutput(
+                rule_code="fmt_margins",
+                rule_name="Margin Check",
+                severity=Severity.WARNING,
+                results=[
+                    RuleResult(status=CheckStatus.FAILED, message="Left margin too small"),
+                ],
+            ),
+        ],
+        8,
+    )
 
     resp = await client.post(
         "/internal/documents/",
@@ -87,7 +90,7 @@ async def test_internal_get_check_results(client: httpx.AsyncClient, doc_repo, c
 
 
 async def test_internal_upload_no_auth_required(client: httpx.AsyncClient, checker_engine):
-    checker_engine.run_checks.return_value = []
+    checker_engine.run_checks.return_value = ([], 0)
 
     resp = await client.post(
         "/internal/documents/",

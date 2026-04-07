@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import re
 import uuid
 from datetime import UTC, datetime
 from io import BytesIO
 from typing import TYPE_CHECKING
 
+from app.checkers.pdf_parser import parse_pdf
 from app.core.domain.entities.document import Document
 from app.core.domain.value_objects import (
     CheckRuleId,
@@ -143,6 +145,11 @@ class DocumentService(DocumentUploadUseCase, DocumentQueryUseCase, RuleManagemen
         if not validation.valid:
             raise ValueError(f"Invalid PDF: {validation.error}")
 
+        resolved_source = source
+        if source == "user_upload":
+            extracted_author = _extract_author_from_pdf(content)
+            resolved_source = extracted_author if extracted_author else "Не указан"
+
         doc_id = DocumentId(uuid.uuid4())
         if user_id is not None:
             s3_key = f"documents/{user_id}/{doc_id}/{filename}"
@@ -158,9 +165,48 @@ class DocumentService(DocumentUploadUseCase, DocumentQueryUseCase, RuleManagemen
             s3_key=s3_key,
             file_size=len(content),
             status=DocumentStatus.PENDING,
-            source=source,
+            source=resolved_source,
             uploaded_at=datetime.now(UTC),
             checked_at=None,
             user_id=user_id,
         )
         return await self._doc_repo.create(document)
+
+
+_AUTHOR_PATTERNS = [
+    re.compile(
+        r"(?:обучающ(?:ийся|аяся)|студент(?:ка)?|автор)\s*[:\-]\s*([А-ЯЁ][а-яё\-]+(?:\s+[А-ЯЁ][а-яё\-]+){1,3})",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?:выполнил(?:а)?|подготовил(?:а)?)\s*[:\-]\s*([А-ЯЁ][а-яё\-]+(?:\s+[А-ЯЁ][а-яё\-]+){1,3})",
+        re.IGNORECASE,
+    ),
+]
+
+
+def _normalize_line(line: str) -> str:
+    return re.sub(r"\s+", " ", line.replace("\u00a0", " ")).strip()
+
+
+def _extract_author_from_pdf(content: bytes) -> str | None:
+    try:
+        parsed = parse_pdf(content)
+    except Exception:
+        return None
+
+    candidates: list[str] = []
+    for page in parsed.pages[:2]:
+        candidates.extend(page.lines[:40])
+
+    for raw_line in candidates:
+        line = _normalize_line(raw_line)
+        if not line:
+            continue
+        for pattern in _AUTHOR_PATTERNS:
+            match = pattern.search(line)
+            if match:
+                author = _normalize_line(match.group(1))
+                # Keep DB-safe length (column currently String(30)).
+                return author[:30]
+    return None

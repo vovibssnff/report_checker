@@ -168,11 +168,16 @@ def _validate_pdf_ok(data: bytes) -> ValidationResult:
 
 
 @pytest.fixture()
-def integration_app(session_factory, s3_config: dict[str, str]):
+async def integration_app(session_factory, s3_config: dict[str, str]):
     from app.adapters.driven.auth.dev_auth_provider import DevAuthProvider
     from app.main import create_app
 
     RuleRegistry.instance().discover_plugins()
+    async with session_factory() as sync_sess:
+        rr = PgCheckRuleRepository(sync_sess)
+        await rr.sync_from_registry(RuleRegistry.instance())
+        await sync_sess.commit()
+
     application = create_app(use_default_services=False)
 
     async def get_test_db_session():

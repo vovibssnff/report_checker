@@ -17,3 +17,4 @@ class User:
     role: UserRole
     itmo_id: str | None
     created_at: datetime
+    password_hash: str | None = None

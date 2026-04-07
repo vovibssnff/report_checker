@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 
+from app.adapters.driven.persistence.database.models.check_result import CheckResultModel
 from app.adapters.driven.persistence.database.models.document import DocumentModel
 from app.core.domain.entities.document import Document
 from app.core.domain.value_objects import (
@@ -44,6 +45,7 @@ class PgDocumentRepository(DocumentRepository):
         model.uploaded_at = document.uploaded_at
         model.checked_at = document.checked_at
         model.user_id = document.user_id
+        model.page_count = document.page_count
         await self._session.flush()
         return self._model_to_entity(model)
 
@@ -91,6 +93,7 @@ class PgDocumentRepository(DocumentRepository):
         model = await self._session.get(DocumentModel, document_id)
         if model is None:
             raise ValueError(f"Document {document_id} not found")
+        await self._session.execute(delete(CheckResultModel).where(CheckResultModel.document_id == document_id))
         await self._session.delete(model)
         await self._session.flush()
 
@@ -107,6 +110,7 @@ class PgDocumentRepository(DocumentRepository):
             uploaded_at=entity.uploaded_at,
             checked_at=entity.checked_at,
             user_id=entity.user_id,
+            page_count=entity.page_count,
         )
 
     @staticmethod
@@ -122,4 +126,5 @@ class PgDocumentRepository(DocumentRepository):
             uploaded_at=model.uploaded_at,
             checked_at=model.checked_at,
             user_id=UserId(model.user_id) if model.user_id else None,
+            page_count=model.page_count,
         )

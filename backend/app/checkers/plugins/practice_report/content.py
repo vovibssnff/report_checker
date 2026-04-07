@@ -25,13 +25,14 @@ class MinPagesRule(BaseRule):
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
-                    message=f"Количество страниц ({pdf.page_count}) меньше минимума ({min_pages})",
+                    message="min_pages_insufficient",
                     details={"page_count": pdf.page_count, "min_pages": min_pages},
                 )
             ]
         return [
             RuleResult(
                 status=CheckStatus.PASSED,
-                message=f"Количество страниц ({pdf.page_count}) соответствует требованиям",
+                message="min_pages_ok",
+                details={"page_count": pdf.page_count},
             )
         ]

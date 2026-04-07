@@ -33,7 +33,8 @@ async def test_upload_document(auth_client: httpx.AsyncClient, test_user):
     doc = body[0]
     assert doc["filename"] == "report.pdf"
     assert doc["document_type"] == "vkr_template"
-    assert doc["status"] == "pending"
+    # Upload runs checks inline; functional tests use a mock engine with no outputs → passed.
+    assert doc["status"] == "passed"
 
 
 async def test_upload_multiple_documents(auth_client: httpx.AsyncClient):
@@ -163,14 +164,17 @@ async def test_run_checks(
     from app.checkers.base import RuleResult
     from app.checkers.engine import CheckOutput
 
-    checker_engine.run_checks.return_value = [
-        CheckOutput(
-            rule_code="fmt_font",
-            rule_name="Font Check",
-            severity=Severity.ERROR,
-            results=[RuleResult(status=CheckStatus.PASSED, message="Font OK")],
-        ),
-    ]
+    checker_engine.run_checks.return_value = (
+        [
+            CheckOutput(
+                rule_code="fmt_font",
+                rule_name="Font Check",
+                severity=Severity.ERROR,
+                results=[RuleResult(status=CheckStatus.PASSED, message="Font OK")],
+            ),
+        ],
+        5,
+    )
 
     resp = await auth_client.post(f"/api/v1/documents/{doc_id}/checks")
     assert resp.status_code == 201

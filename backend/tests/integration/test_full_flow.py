@@ -24,7 +24,8 @@ async def test_upload_check_retrieve_flow(
     docs = upload_resp.json()
     assert len(docs) == 1
     doc_id = docs[0]["id"]
-    assert docs[0]["status"] == "pending"
+    # Upload endpoint runs checks before responding; status is already terminal.
+    assert docs[0]["status"] in ("passed", "failed", "warning")
 
     check_resp = await auth_integration_client.post(f"/api/v1/documents/{doc_id}/checks")
     assert check_resp.status_code == 201

@@ -235,7 +235,7 @@ def storage() -> AsyncMock:
 @pytest.fixture()
 def checker_engine() -> AsyncMock:
     engine = AsyncMock(spec=CheckerEngine)
-    engine.run_checks.return_value = []
+    engine.run_checks.return_value = ([], 0)
     return engine
 
 

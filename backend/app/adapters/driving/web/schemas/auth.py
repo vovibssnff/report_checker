@@ -5,9 +5,16 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict
 
 
-class DevLoginRequest(BaseModel):
+class DevRegisterRequest(BaseModel):
     email: str
     name: str
+    password: str
+    role: str
+
+
+class DevLoginRequest(BaseModel):
+    email: str
+    password: str
 
 
 class UserResponse(BaseModel):
