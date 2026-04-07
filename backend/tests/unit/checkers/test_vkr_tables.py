@@ -43,4 +43,3 @@ class TestTableNumberingRule:
         assert len(results) == 1
         assert results[0].status == CheckStatus.PASSED
         assert results[0].message == "table_numbering_ok"
-

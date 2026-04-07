@@ -276,7 +276,7 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState<string | null>(null);
   const [computedReport, setComputedReport] = useState<DocumentReport | undefined>(props.report);
-  const [backendDocType, setBackendDocType] = useState<string | null>(null);
+  const [, setBackendDocType] = useState<string | null>(null);
 
   useEffect(() => {
     if (props.transitionStartRect) {
@@ -494,14 +494,6 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
   const startRect = props.transitionStartRect ?? null;
   const showFlyout = isTransitioning && startRect && !revealPreviewBeforeUnmount;
   const reportToShow = computedReport ?? props.report;
-
-  const BACKEND_DOC_TYPE_TO_KEY: Record<string, string> = {
-    vkr_template: 'documents.masters',
-    practice_report: 'documents.bachelors',
-  };
-  const resolvedTypeLabel = backendDocType && BACKEND_DOC_TYPE_TO_KEY[backendDocType]
-    ? t(BACKEND_DOC_TYPE_TO_KEY[backendDocType])
-    : props.typeLabel;
 
   const allHighlights = useMemo<TextHighlight[]>(() => {
     if (!reportToShow) return [];

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING
 from unittest.mock import AsyncMock
 
 import pytest
@@ -10,6 +10,9 @@ from fastapi.testclient import TestClient
 
 from app.adapters.driving.web import dependencies
 from app.main import _build_services, _noop_lifespan, create_app, lifespan
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 
 def test_create_app_health_and_exception_handlers() -> None:

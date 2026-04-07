@@ -20,10 +20,22 @@ class TestPracticeRequiredSectionsRule:
         make_parsed_pdf,
     ) -> None:
         pages = [
-            make_parsed_page(number=1, text_blocks=[make_text_block(text="ТИТУЛЬНЫЙ ЛИСТ ОТЧЕТА", bbox=(130.0, 80.0, 470.0, 96.0))], lines=["ТИТУЛЬНЫЙ ЛИСТ ОТЧЕТА"]),
+            make_parsed_page(
+                number=1,
+                text_blocks=[make_text_block(text="ТИТУЛЬНЫЙ ЛИСТ ОТЧЕТА", bbox=(130.0, 80.0, 470.0, 96.0))],
+                lines=["ТИТУЛЬНЫЙ ЛИСТ ОТЧЕТА"],
+            ),
             make_parsed_page(number=2, lines=["С О Д Е Р Ж А Н И Е"]),
-            make_parsed_page(number=3, text_blocks=[make_text_block(text="ВВЕДЕНИЕ В ПРЕДМЕТ ПРАКТИКИ", bbox=(120.0, 80.0, 490.0, 96.0))], lines=["ВВЕДЕНИЕ В ПРЕДМЕТ ПРАКТИКИ"]),
-            make_parsed_page(number=4, text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ ПО ИТОГАМ ПРАКТИКИ", bbox=(110.0, 80.0, 500.0, 96.0))], lines=["ЗАКЛЮЧЕНИЕ ПО ИТОГАМ ПРАКТИКИ"]),
+            make_parsed_page(
+                number=3,
+                text_blocks=[make_text_block(text="ВВЕДЕНИЕ В ПРЕДМЕТ ПРАКТИКИ", bbox=(120.0, 80.0, 490.0, 96.0))],
+                lines=["ВВЕДЕНИЕ В ПРЕДМЕТ ПРАКТИКИ"],
+            ),
+            make_parsed_page(
+                number=4,
+                text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ ПО ИТОГАМ ПРАКТИКИ", bbox=(110.0, 80.0, 500.0, 96.0))],
+                lines=["ЗАКЛЮЧЕНИЕ ПО ИТОГАМ ПРАКТИКИ"],
+            ),
         ]
         pdf = make_parsed_pdf(pages=pages)
 
@@ -42,10 +54,26 @@ class TestPracticeRequiredSectionsRule:
         make_parsed_pdf,
     ) -> None:
         pages = [
-            make_parsed_page(number=1, text_blocks=[make_text_block(text="Титульный лист", bbox=(100.0, 80.0, 360.0, 96.0))], lines=["Титульный лист"]),
-            make_parsed_page(number=2, text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["СОДЕРЖАНИЕ"]),
-            make_parsed_page(number=3, text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ВВЕДЕНИЕ"]),
-            make_parsed_page(number=4, text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))], lines=["ЗАКЛЮЧЕНИЕ"]),
+            make_parsed_page(
+                number=1,
+                text_blocks=[make_text_block(text="Титульный лист", bbox=(100.0, 80.0, 360.0, 96.0))],
+                lines=["Титульный лист"],
+            ),
+            make_parsed_page(
+                number=2,
+                text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["СОДЕРЖАНИЕ"],
+            ),
+            make_parsed_page(
+                number=3,
+                text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ВВЕДЕНИЕ"],
+            ),
+            make_parsed_page(
+                number=4,
+                text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))],
+                lines=["ЗАКЛЮЧЕНИЕ"],
+            ),
         ]
         pdf = make_parsed_pdf(pages=pages)
 
@@ -84,9 +112,21 @@ class TestPracticeRequiredSectionsRule:
         ]
         pages = [
             make_parsed_page(number=1, lines=page1_lines),
-            make_parsed_page(number=2, text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["СОДЕРЖАНИЕ"]),
-            make_parsed_page(number=3, text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ВВЕДЕНИЕ"]),
-            make_parsed_page(number=4, text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))], lines=["ЗАКЛЮЧЕНИЕ"]),
+            make_parsed_page(
+                number=2,
+                text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["СОДЕРЖАНИЕ"],
+            ),
+            make_parsed_page(
+                number=3,
+                text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ВВЕДЕНИЕ"],
+            ),
+            make_parsed_page(
+                number=4,
+                text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))],
+                lines=["ЗАКЛЮЧЕНИЕ"],
+            ),
         ]
         pdf = make_parsed_pdf(pages=pages)
 
@@ -95,4 +135,3 @@ class TestPracticeRequiredSectionsRule:
         assert len(results) == 1
         assert results[0].status == CheckStatus.PASSED
         assert results[0].message == "required_sections_ok"
-

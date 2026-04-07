@@ -55,11 +55,31 @@ class TestRequiredSectionsRule:
         make_parsed_pdf,
     ) -> None:
         pages = [
-            make_parsed_page(number=1, text_blocks=[make_text_block(text="титульный лист", bbox=(100.0, 80.0, 360.0, 96.0))], lines=["титульный лист"]),
-            make_parsed_page(number=2, text_blocks=[make_text_block(text="ЗАДАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ЗАДАНИЕ"]),
-            make_parsed_page(number=3, text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["СОДЕРЖАНИЕ"]),
-            make_parsed_page(number=4, text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ВВЕДЕНИЕ"]),
-            make_parsed_page(number=5, text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))], lines=["ЗАКЛЮЧЕНИЕ"]),
+            make_parsed_page(
+                number=1,
+                text_blocks=[make_text_block(text="титульный лист", bbox=(100.0, 80.0, 360.0, 96.0))],
+                lines=["титульный лист"],
+            ),
+            make_parsed_page(
+                number=2,
+                text_blocks=[make_text_block(text="ЗАДАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ЗАДАНИЕ"],
+            ),
+            make_parsed_page(
+                number=3,
+                text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["СОДЕРЖАНИЕ"],
+            ),
+            make_parsed_page(
+                number=4,
+                text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ВВЕДЕНИЕ"],
+            ),
+            make_parsed_page(
+                number=5,
+                text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))],
+                lines=["ЗАКЛЮЧЕНИЕ"],
+            ),
             make_parsed_page(
                 number=6,
                 text_blocks=[make_text_block(text="СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ", bbox=(110.0, 80.0, 500.0, 96.0))],
@@ -79,11 +99,27 @@ class TestRequiredSectionsRule:
     @pytest.mark.asyncio
     async def test_detects_spaced_letters_toc(self, rule, make_text_block, make_parsed_page, make_parsed_pdf) -> None:
         pages = [
-            make_parsed_page(number=1, text_blocks=[make_text_block(text="ТИТУЛЬНЫЙ ЛИСТ", bbox=(160.0, 80.0, 430.0, 96.0))], lines=["ТИТУЛЬНЫЙ ЛИСТ"]),
-            make_parsed_page(number=2, text_blocks=[make_text_block(text="ЗАДАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ЗАДАНИЕ"]),
+            make_parsed_page(
+                number=1,
+                text_blocks=[make_text_block(text="ТИТУЛЬНЫЙ ЛИСТ", bbox=(160.0, 80.0, 430.0, 96.0))],
+                lines=["ТИТУЛЬНЫЙ ЛИСТ"],
+            ),
+            make_parsed_page(
+                number=2,
+                text_blocks=[make_text_block(text="ЗАДАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ЗАДАНИЕ"],
+            ),
             make_parsed_page(number=3, lines=["С О Д Е Р Ж А Н И Е"]),
-            make_parsed_page(number=4, text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ВВЕДЕНИЕ"]),
-            make_parsed_page(number=5, text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))], lines=["ЗАКЛЮЧЕНИЕ"]),
+            make_parsed_page(
+                number=4,
+                text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ВВЕДЕНИЕ"],
+            ),
+            make_parsed_page(
+                number=5,
+                text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))],
+                lines=["ЗАКЛЮЧЕНИЕ"],
+            ),
             make_parsed_page(
                 number=6,
                 text_blocks=[make_text_block(text="СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ", bbox=(110.0, 80.0, 500.0, 96.0))],
@@ -125,10 +161,26 @@ class TestRequiredSectionsRule:
         ]
         pages = [
             make_parsed_page(number=1, lines=page1_lines),
-            make_parsed_page(number=2, text_blocks=[make_text_block(text="ЗАДАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ЗАДАНИЕ"]),
-            make_parsed_page(number=3, text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["СОДЕРЖАНИЕ"]),
-            make_parsed_page(number=4, text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))], lines=["ВВЕДЕНИЕ"]),
-            make_parsed_page(number=5, text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))], lines=["ЗАКЛЮЧЕНИЕ"]),
+            make_parsed_page(
+                number=2,
+                text_blocks=[make_text_block(text="ЗАДАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ЗАДАНИЕ"],
+            ),
+            make_parsed_page(
+                number=3,
+                text_blocks=[make_text_block(text="СОДЕРЖАНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["СОДЕРЖАНИЕ"],
+            ),
+            make_parsed_page(
+                number=4,
+                text_blocks=[make_text_block(text="ВВЕДЕНИЕ", bbox=(180.0, 80.0, 410.0, 96.0))],
+                lines=["ВВЕДЕНИЕ"],
+            ),
+            make_parsed_page(
+                number=5,
+                text_blocks=[make_text_block(text="ЗАКЛЮЧЕНИЕ", bbox=(170.0, 80.0, 420.0, 96.0))],
+                lines=["ЗАКЛЮЧЕНИЕ"],
+            ),
             make_parsed_page(
                 number=6,
                 text_blocks=[make_text_block(text="СПИСОК ИСПОЛЬЗОВАННЫХ ИСТОЧНИКОВ", bbox=(110.0, 80.0, 500.0, 96.0))],
@@ -142,4 +194,3 @@ class TestRequiredSectionsRule:
         assert len(results) == 1
         assert results[0].status == CheckStatus.PASSED
         assert results[0].message == "required_sections_ok"
-

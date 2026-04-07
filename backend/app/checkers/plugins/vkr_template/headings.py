@@ -46,7 +46,7 @@ def _looks_like_structural_heading(text: str) -> bool:
         tail_tokens = normalized.split()[3:]
         return tail_tokens in (["и", "литературы"], ["и", "информационных", "источников"])
     if normalized.startswith("приложение"):
-        # Accept appendix headings like "ПРИЛОЖЕНИЕ А" / "ПРИЛОЖЕНИЕ 1".
+        # Accept appendix headings like "ПРИЛОЖЕНИЕ A" / "ПРИЛОЖЕНИЕ 1".
         return len(tokens) <= 3
     return False
 
@@ -193,7 +193,9 @@ class SectionNumberingRule(BaseRule):
                 stripped = tb.text.strip()
                 missing_dot_match = _SECTION_NUMBER_MISSING_DOT_RE.match(stripped)
                 if missing_dot_match:
-                    issues.append({"type": "missing_dot_after_number", "number": missing_dot_match.group(1), "page": page.number})
+                    issues.append(
+                        {"type": "missing_dot_after_number", "number": missing_dot_match.group(1), "page": page.number}
+                    )
                     continue
 
                 match = _SECTION_NUMBER_RE.match(stripped)
@@ -205,7 +207,11 @@ class SectionNumberingRule(BaseRule):
             missing_dot_match = _SECTION_NUMBER_MISSING_DOT_RE.match(stripped)
             if missing_dot_match:
                 issues.append(
-                    {"type": "missing_dot_after_number", "number": missing_dot_match.group(1), "page": heading.page_number}
+                    {
+                        "type": "missing_dot_after_number",
+                        "number": missing_dot_match.group(1),
+                        "page": heading.page_number,
+                    }
                 )
                 continue
 

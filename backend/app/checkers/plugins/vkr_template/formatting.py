@@ -8,12 +8,14 @@ from app.checkers.base import BaseRule, RuleResult, rule
 from app.core.domain.value_objects import CheckStatus, DocumentType, Severity
 
 if TYPE_CHECKING:
-    from app.checkers.pdf_parser import ParsedPDF, ParsedPage
+    from app.checkers.pdf_parser import ParsedPage, ParsedPDF
 
 _PTS_TO_MM = 1 / 2.835
 
 
-def _is_block_inside_table(block_bbox: tuple[float, float, float, float], table_bbox: tuple[float, float, float, float]) -> bool:
+def _is_block_inside_table(
+    block_bbox: tuple[float, float, float, float], table_bbox: tuple[float, float, float, float]
+) -> bool:
     bx0, by0, bx1, by1 = block_bbox
     tx0, ty0, tx1, ty1 = table_bbox
     return bx0 >= tx0 and bx1 <= tx1 and by0 >= ty0 and by1 <= ty1

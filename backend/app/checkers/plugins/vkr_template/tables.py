@@ -95,7 +95,7 @@ class TableNumberingRule(BaseRule):
             searchable_texts = [*page.lines, *(tb.text for tb in page.text_blocks)]
             for raw_text in searchable_texts:
                 text = _normalize_for_search(raw_text)
-                for match in _TABLE_PATTERN.finditer(text):
+                for match in _TABLE_MENTION.finditer(text):
                     num_str = match.group(1)
                     parts = num_str.split(".")
                     numbers.append(int(parts[-1]))

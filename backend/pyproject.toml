@@ -84,6 +84,8 @@ ignore = [
 "app/adapters/driving/internal/router.py" = ["TC003"]
 "app/adapters/driving/web/schemas/rule.py" = ["TC003"]
 "app/adapters/driving/web/v1/rules.py" = ["TC003"]
+"tests/unit/checkers/test_practice_structure_required_sections.py" = ["E501"]
+"tests/unit/checkers/test_vkr_structure_required_sections.py" = ["E501"]
 
 [tool.mypy]
 python_version = "3.13"

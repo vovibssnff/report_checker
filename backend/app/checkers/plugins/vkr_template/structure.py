@@ -7,7 +7,7 @@ from app.checkers.base import BaseRule, RuleResult, rule
 from app.core.domain.value_objects import CheckStatus, DocumentType, Severity
 
 if TYPE_CHECKING:
-    from app.checkers.pdf_parser import ParsedPDF, ParsedPage, TextBlock
+    from app.checkers.pdf_parser import ParsedPage, ParsedPDF, TextBlock
 
 _REQUIRED_SECTIONS = [
     ("title_page", ["титульный лист"]),
@@ -111,9 +111,7 @@ def _looks_like_section_heading(entry: dict[str, Any]) -> bool:
         return True
 
     # For line-based fallback, accept only very heading-like text.
-    if entry.get("source") == "line" and is_uppercase and len(tokens) <= 8:
-        return True
-    return False
+    return bool(entry.get("source") == "line" and is_uppercase and len(tokens) <= 8)
 
 
 def _is_first_meaningful_on_page(entry: dict[str, Any]) -> bool:
@@ -187,7 +185,7 @@ class RequiredSectionsRule(BaseRule):
             text = heading.text.strip()
             if len(text) < 3:
                 continue
-            page = page_map.get(heading.page_number)
+            heading_page = page_map.get(heading.page_number)
             candidate_entries.append(
                 {
                     "page": heading.page_number,
@@ -199,10 +197,10 @@ class RequiredSectionsRule(BaseRule):
                     "location": None,
                 }
             )
-            if page:
-                matching_block = next((b for b in page.text_blocks if b.text.strip() == text), None)
+            if heading_page:
+                matching_block = next((b for b in heading_page.text_blocks if b.text.strip() == text), None)
                 if matching_block:
-                    candidate_entries[-1]["is_centered"] = _is_centered(matching_block, page)
+                    candidate_entries[-1]["is_centered"] = _is_centered(matching_block, heading_page)
                     candidate_entries[-1]["location"] = {
                         "x0": round(matching_block.bbox[0], 2),
                         "y0": round(matching_block.bbox[1], 2),
@@ -218,13 +216,13 @@ class RequiredSectionsRule(BaseRule):
             if section_code == "title_page":
                 title_marker_hits: list[tuple[int, int]] = []
                 for page in pdf.pages:
-                    score = _title_page_marker_score(page.lines)
-                    if score > 0:
+                    marker_score = _title_page_marker_score(page.lines)
+                    if marker_score > 0:
                         position = page.number * 1000
-                        title_marker_hits.append((position, score))
+                        title_marker_hits.append((position, marker_score))
                 if title_marker_hits:
                     title_marker_hits.sort(key=lambda x: (x[0], -x[1]))
-                    position, _score = title_marker_hits[0]
+                    position, _marker_score = title_marker_hits[0]
                     found_order.append(
                         (
                             section_code,
@@ -243,19 +241,20 @@ class RequiredSectionsRule(BaseRule):
 
             matched: list[tuple[int, float, dict[str, Any]]] = []
             for entry in candidate_entries:
-                if not _looks_like_section_heading(entry):
-                    continue
                 if not _is_first_meaningful_on_page(entry):
                     continue
-                score = _section_match_score(entry["text"], keywords)
-                if score <= 0:
+                is_heading_like = _looks_like_section_heading(entry)
+                if not is_heading_like and section_code != "title_page":
+                    continue
+                match_score = _section_match_score(entry["text"], keywords)
+                if match_score <= 0:
                     continue
                 absolute_position = entry["page"] * 1000 + entry["order"]
-                matched.append((absolute_position, score, entry))
+                matched.append((absolute_position, match_score, entry))
 
             if matched:
                 matched.sort(key=lambda x: (x[0], -x[1]))
-                position, _score, best = matched[0]
+                position, _match_score, best = matched[0]
                 found_order.append((section_code, position, best))
 
                 has_style_data = best.get("is_uppercase") is not None and best.get("is_centered") is not None

@@ -46,7 +46,7 @@ class CheckerEngine:
         rules = self._registry.get_rules(doc_type, enabled_codes=enabled_codes)
         if not rules:
             self._logger.warning("checker_rules_empty %s", kv(document_type=doc_type))
-            return []
+            return [], parsed.page_count
         self._logger.info(
             "checker_rules_selected %s",
             kv(document_type=doc_type, selected_codes=",".join(sorted(r.code for r in rules))),
