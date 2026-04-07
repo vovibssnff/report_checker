@@ -153,7 +153,7 @@ jobs:
           exit-code: "1"
 
       - name: Scan frontend image with Trivy
-        uses: aquasec/trivy@canary
+        uses: aquasec/trivy:canary
         with:
           image-ref: report-checker-frontend:${{ github.sha }}
           format: table
