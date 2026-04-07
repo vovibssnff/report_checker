@@ -46,9 +46,9 @@ services:
       - ./backend/.env
     volumes:
       - minio_data:/data
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    expose:
+      - "9000"
+      - "9001"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
@@ -73,6 +73,7 @@ services:
     depends_on:
       - backend
       - frontend
+      - minio
     ports:
       - "80:80"
       - "443:443"
