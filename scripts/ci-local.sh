@@ -71,7 +71,7 @@ run "Build" "Docker build frontend" docker build --target runtime -t "report-che
 # ─── Container security scan (Trivy) ─────────────────────────────────
 if ! command -v trivy >/dev/null 2>&1; then
   echo -e "\n${YELLOW}[Container Security]${NC} Trivy not found, using Docker image fallback"
-  TRIVY_CMD=(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:0.56.2 image)
+  TRIVY_CMD=(docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:canary image)
 else
   TRIVY_CMD=(trivy image)
 fi
