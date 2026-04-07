@@ -22,5 +22,30 @@ document_retention_days: 365
 
 auth_mode: "{{ vault_auth_mode }}"
 
-caddy_domain: ""
 caddy_tls_email: ""
+
+# Single source of truth for public DNS names.
+# Example:
+#   base_domain: example.com
+# Produces:
+#   caddy_domain: app.example.com
+#   minio_server_url: https://app.example.com/s3
+#   minio_browser_redirect_url: https://app.example.com/minio-console
+base_domain: ""
+
+# Optional explicit overrides.
+caddy_domain_override: ""
+
+caddy_domain: >-
+  {{
+    caddy_domain_override
+    if caddy_domain_override | length > 0
+    else ('app.' ~ base_domain if base_domain | length > 0 else '')
+  }}
+
+public_base_url: >-
+  {{
+    'https://' ~ (caddy_domain if caddy_domain | length > 0 else ansible_host)
+  }}
+minio_server_url: "{{ public_base_url }}/s3"
+minio_browser_redirect_url: "{{ public_base_url }}/minio-console"

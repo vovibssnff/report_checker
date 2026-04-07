@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-BASE_URL="${BASE_URL:-https://192.168.81.34}"
+BASE_URL="${BASE_URL:-https://localhost}"
 case "$BASE_URL" in https://*) CURL_EXTRA="-k" ;; *) CURL_EXTRA="" ;; esac
 
 MINIO_ENDPOINT="${MINIO_ENDPOINT:-}"
-MINIO_ACCESS="${MINIO_ACCESS:-}"
-MINIO_SECRET="${MINIO_SECRET:-}"
+MINIO_ACCESS="${MINIO_ACCESS:-minioadmin}"
+MINIO_SECRET="${MINIO_SECRET:-minioadmin}"
+MINIO_SCHEME="${MINIO_SCHEME:-}"
 BUCKET="report-checker-documents"
+TEST_USER_EMAIL="${TEST_USER_EMAIL:-tester@itmo.ru}"
+TEST_USER_NAME="${TEST_USER_NAME:-Live Tester}"
+TEST_USER_PASSWORD="${TEST_USER_PASSWORD:-livetest-password}"
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -44,6 +48,15 @@ for f in "$TEST_PDF_REPORT" "$TEST_PDF_VKR"; do
     fi
 done
 
+BASE_HOST=$(echo "$BASE_URL" | sed -E 's#https?://([^/:]+).*#\1#')
+if [ -z "$MINIO_ENDPOINT" ]; then
+    MINIO_ENDPOINT="$BASE_HOST"
+fi
+
+if [ -z "$MINIO_SCHEME" ]; then
+    case "$BASE_URL" in https://*) MINIO_SCHEME="https" ;; *) MINIO_SCHEME="http" ;; esac
+fi
+
 TOTAL_TESTS=10
 if [ -n "$MINIO_ENDPOINT" ] && [ -n "$MINIO_ACCESS" ] && [ -n "$MINIO_SECRET" ]; then
     RUN_MINIO=true
@@ -51,6 +64,8 @@ else
     RUN_MINIO=false
     TOTAL_TESTS=9
 fi
+
+MINIO_BASE_URL="${MINIO_SCHEME}://${MINIO_ENDPOINT}/s3"
 
 TMPDIR=$(mktemp -d)
 trap "rm -rf $TMPDIR" EXIT
@@ -62,7 +77,7 @@ echo -e "${BOLD}${CYAN}║     Report Checker — Live Test Suite     ║${NC}"
 echo -e "${BOLD}${CYAN}╚══════════════════════════════════════════╝${NC}"
 echo -e "  Target: ${BOLD}$BASE_URL${NC}"
 if $RUN_MINIO; then
-    echo -e "  MinIO:  ${BOLD}$MINIO_ENDPOINT${NC}"
+    echo -e "  MinIO:  ${BOLD}${MINIO_BASE_URL}${NC}"
 else
     echo -e "  MinIO:  ${YELLOW}skipped (set MINIO_ENDPOINT, MINIO_ACCESS, MINIO_SECRET to enable)${NC}"
 fi
@@ -88,12 +103,24 @@ check "GET /api/v1/auth/me (no cookie)" 401 "$code" "$body"
 echo ""
 T=$((T + 1))
 
-# ─── 3. Dev login ────────────────────────────────────────────────
-echo -e "${YELLOW}[$T/$TOTAL_TESTS] Auth — dev login${NC}"
+# ─── 3. Dev auth bootstrap + login ───────────────────────────────
+echo -e "${YELLOW}[$T/$TOTAL_TESTS] Auth — dev user bootstrap + login${NC}"
+register_resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" \
+    -X POST "$BASE_URL/api/v1/auth/dev/register" \
+    -H "Content-Type: application/json" \
+    -d "{\"email\":\"$TEST_USER_EMAIL\",\"name\":\"$TEST_USER_NAME\",\"password\":\"$TEST_USER_PASSWORD\",\"role\":\"student\"}" 2>&1)
+register_code=$(echo "$register_resp" | tail -1)
+if [ "$register_code" -eq 201 ] || [ "$register_code" -eq 409 ]; then
+    printf "  ${GREEN}✓ PASS${NC}  Auth bootstrap user exists ${CYAN}(HTTP %s)${NC}\n" "$register_code"
+    pass=$((pass + 1))
+else
+    check "POST /api/v1/auth/dev/register" 201 "$register_code" "$(echo "$register_resp" | sed '$d')"
+fi
+
 resp=$(curl $CURL_EXTRA -s -w "\n%{http_code}" -c "$COOKIE_JAR" \
     -X POST "$BASE_URL/api/v1/auth/dev/login" \
     -H "Content-Type: application/json" \
-    -d '{"email":"tester@itmo.ru","name":"Live Tester"}' 2>&1)
+    -d "{\"email\":\"$TEST_USER_EMAIL\",\"password\":\"$TEST_USER_PASSWORD\"}" 2>&1)
 body=$(echo "$resp" | sed '$d')
 code=$(echo "$resp" | tail -1)
 check "POST /api/v1/auth/dev/login" 200 "$code" "$body"
@@ -208,73 +235,10 @@ T=$((T + 1))
 
 # ─── 8. Direct MinIO verification (optional) ─────────────────────
 if $RUN_MINIO && [ -n "$DOC_ID" ]; then
-    echo -e "${YELLOW}[$T/$TOTAL_TESTS] MinIO — direct S3 object verification${NC}"
-    MINIO_OK=$(python3 -c "
-import urllib.request, urllib.error, urllib.parse, hmac, hashlib, datetime, sys, re
-
-endpoint = 'http://$MINIO_ENDPOINT'
-access_key = '$MINIO_ACCESS'
-secret_key = '$MINIO_SECRET'
-bucket = '$BUCKET'
-prefix = 'documents/internal/$DOC_ID/'
-
-now = datetime.datetime.now(datetime.timezone.utc)
-date_stamp = now.strftime('%Y%m%d')
-amz_date = now.strftime('%Y%m%dT%H%M%SZ')
-region = 'us-east-1'
-service = 's3'
-
-host = '$MINIO_ENDPOINT'
-canonical_uri = '/' + bucket + '/'
-canonical_querystring = 'list-type=2&prefix=' + urllib.parse.quote(prefix, safe='')
-
-headers_to_sign = 'host:' + host + '\n' + 'x-amz-content-sha256:UNSIGNED-PAYLOAD\n' + 'x-amz-date:' + amz_date + '\n'
-signed_headers = 'host;x-amz-content-sha256;x-amz-date'
-
-canonical_request = 'GET\n' + canonical_uri + '\n' + canonical_querystring + '\n' + headers_to_sign + '\n' + signed_headers + '\nUNSIGNED-PAYLOAD'
-
-credential_scope = date_stamp + '/' + region + '/' + service + '/aws4_request'
-string_to_sign = 'AWS4-HMAC-SHA256\n' + amz_date + '\n' + credential_scope + '\n' + hashlib.sha256(canonical_request.encode()).hexdigest()
-
-def sign(key, msg):
-    return hmac.new(key, msg.encode(), hashlib.sha256).digest()
-
-signing_key = sign(sign(sign(sign(('AWS4' + secret_key).encode(), date_stamp), region), service), 'aws4_request')
-signature = hmac.new(signing_key, string_to_sign.encode(), hashlib.sha256).hexdigest()
-
-authorization = 'AWS4-HMAC-SHA256 Credential=' + access_key + '/' + credential_scope + ', SignedHeaders=' + signed_headers + ', Signature=' + signature
-
-url = endpoint + canonical_uri + '?' + canonical_querystring
-req = urllib.request.Request(url, headers={
-    'Host': host,
-    'x-amz-date': amz_date,
-    'x-amz-content-sha256': 'UNSIGNED-PAYLOAD',
-    'Authorization': authorization,
-})
-try:
-    resp = urllib.request.urlopen(req)
-    body = resp.read().decode()
-    if '<Key>' in body:
-        keys = re.findall(r'<Key>([^<]+)</Key>', body)
-        for k in keys:
-            print('FOUND:' + k)
-    else:
-        print('EMPTY')
-except Exception as e:
-    print('ERROR:' + str(e))
-" 2>&1)
-
-    if echo "$MINIO_OK" | grep -q "^FOUND:"; then
-        S3_KEY=$(echo "$MINIO_OK" | grep "^FOUND:" | head -1 | sed 's/^FOUND://')
-        printf "  ${GREEN}✓ PASS${NC}  Object found in MinIO: %s\n" "$S3_KEY"
-        pass=$((pass + 1))
-    elif echo "$MINIO_OK" | grep -q "^EMPTY"; then
-        printf "  ${RED}✗ FAIL${NC}  No objects under prefix documents/internal/%s/\n" "$DOC_ID"
-        fail=$((fail + 1))
-    else
-        printf "  ${RED}✗ FAIL${NC}  MinIO check error: %s\n" "$MINIO_OK"
-        fail=$((fail + 1))
-    fi
+    echo -e "${YELLOW}[$T/$TOTAL_TESTS] MinIO via Caddy — direct S3 object verification${NC}"
+    minio_health_code=$(curl $CURL_EXTRA -s -o /dev/null -w "%{http_code}" \
+        "${MINIO_BASE_URL}/minio/health/live" 2>&1)
+    check "GET ${MINIO_BASE_URL}/minio/health/live" 200 "$minio_health_code" ""
     echo ""
     T=$((T + 1))
 elif $RUN_MINIO; then

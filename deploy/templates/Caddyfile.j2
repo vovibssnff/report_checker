@@ -24,6 +24,18 @@ https://{{ ansible_host }} {
 		reverse_proxy backend:8000
 	}
 
+	# MinIO API behind path prefix.
+	handle_path /s3/* {
+		reverse_proxy minio:9000
+	}
+	redir /s3 /s3/ permanent
+
+	# MinIO console behind path prefix.
+	handle_path /minio-console/* {
+		reverse_proxy minio:9001
+	}
+	redir /minio-console /minio-console/ permanent
+
 	# Serve frontend for all non-API routes, including "/".
 	handle {
 		reverse_proxy frontend:5173
