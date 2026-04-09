@@ -267,6 +267,7 @@ def app(
     application.dependency_overrides[dependencies.get_query_service] = lambda: doc_service
     application.dependency_overrides[dependencies.get_rule_service] = lambda: doc_service
     application.dependency_overrides[dependencies.get_auth_service] = lambda: user_service
+    application.dependency_overrides[dependencies.get_user_repo] = lambda: user_repo
     return application
 
 

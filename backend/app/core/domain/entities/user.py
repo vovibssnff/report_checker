@@ -18,3 +18,4 @@ class User:
     itmo_id: str | None
     created_at: datetime
     password_hash: str | None = None
+    itmo_refresh_token: str | None = None

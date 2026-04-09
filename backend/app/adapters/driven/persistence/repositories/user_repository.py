@@ -41,6 +41,20 @@ class PgUserRepository(UserRepository):
         await self._session.flush()
         return self._model_to_entity(model)
 
+    async def update(self, user: User) -> User:
+        model = await self._session.get(UserModel, user.id)
+        if model is None:
+            raise ValueError(f"User {user.id} not found")
+        model.email = user.email
+        model.name = user.name
+        model.role = user.role.value
+        model.password_hash = user.password_hash
+        model.itmo_id = user.itmo_id
+        model.itmo_refresh_token = user.itmo_refresh_token
+        model.created_at = user.created_at
+        await self._session.flush()
+        return self._model_to_entity(model)
+
     @staticmethod
     def _entity_to_model(entity: User) -> UserModel:
         return UserModel(
@@ -50,6 +64,7 @@ class PgUserRepository(UserRepository):
             role=entity.role.value,
             password_hash=entity.password_hash,
             itmo_id=entity.itmo_id,
+            itmo_refresh_token=entity.itmo_refresh_token,
             created_at=entity.created_at,
         )
 
@@ -63,4 +78,5 @@ class PgUserRepository(UserRepository):
             itmo_id=model.itmo_id,
             created_at=model.created_at,
             password_hash=model.password_hash,
+            itmo_refresh_token=model.itmo_refresh_token,
         )

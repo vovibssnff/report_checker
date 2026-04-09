@@ -15,6 +15,7 @@ from app.adapters.driving.web.dependencies import (
     get_current_user,
     get_query_service,
     get_upload_service,
+    get_user_repo,
 )
 from app.adapters.driving.web.schemas.common import PaginatedResponse
 from app.adapters.driving.web.schemas.document import (
@@ -22,10 +23,11 @@ from app.adapters.driving.web.schemas.document import (
     DocumentDetailResponse,
     DocumentResponse,
 )
-from app.core.domain.value_objects import DocumentId, DocumentStatus, DocumentType, Pagination
+from app.core.domain.value_objects import DocumentId, DocumentStatus, DocumentType, Pagination, UserRole
 
 if TYPE_CHECKING:
     from app.core.domain.entities.user import User
+    from app.core.ports.driven.user_repository import UserRepository
     from app.core.ports.driving.document_checking import DocumentCheckUseCase
     from app.core.ports.driving.document_querying import DocumentQueryUseCase
     from app.core.ports.driving.document_uploading import DocumentUploadUseCase
@@ -42,6 +44,14 @@ def _content_disposition_attachment(filename: str) -> str:
     except UnicodeEncodeError:
         value = f"attachment; filename=document; filename*=UTF-8''{quote(filename, safe='')}"
     return value
+
+
+def _can_access_document(user: User, owner_id) -> bool:
+    if user.role in (UserRole.ADMIN, UserRole.TEACHER):
+        return True
+    if owner_id is None:
+        return False
+    return owner_id == user.id
 
 
 @router.post("/", response_model=list[DocumentResponse], status_code=status.HTTP_201_CREATED)
@@ -90,15 +100,41 @@ async def list_documents(
     document_status: str | None = Query(None, alias="status"),
     user: User = Depends(get_current_user),
     query_service: DocumentQueryUseCase = Depends(get_query_service),
+    user_repo: UserRepository = Depends(get_user_repo),
 ) -> PaginatedResponse[DocumentResponse]:
-    docs, total = await query_service.list_for_user(
-        user.id,
-        document_type=DocumentType(document_type) if document_type else None,
-        status=DocumentStatus(document_status) if document_status else None,
-        pagination=Pagination(page=page, size=size),
-    )
+    parsed_document_type = DocumentType(document_type) if document_type else None
+    parsed_status = DocumentStatus(document_status) if document_status else None
+    pagination = Pagination(page=page, size=size)
+    if user.role in (UserRole.TEACHER, UserRole.ADMIN):
+        docs, total = await query_service.list_all(
+            document_type=parsed_document_type,
+            status=parsed_status,
+            pagination=pagination,
+        )
+    else:
+        docs, total = await query_service.list_for_user(
+            user.id,
+            document_type=parsed_document_type,
+            status=parsed_status,
+            pagination=pagination,
+        )
+    uploader_names: dict = {}
+    if user.role in (UserRole.TEACHER, UserRole.ADMIN):
+        for doc in docs:
+            if doc.user_id is None or doc.user_id in uploader_names:
+                continue
+            try:
+                uploader = await user_repo.get_by_id(doc.user_id)
+                uploader_names[doc.user_id] = uploader.name
+            except ValueError:
+                uploader_names[doc.user_id] = None
     return PaginatedResponse(
-        items=[DocumentResponse.model_validate(d, from_attributes=True) for d in docs],
+        items=[
+            DocumentResponse.model_validate(d, from_attributes=True).model_copy(
+                update={"uploader_name": uploader_names.get(d.user_id)}
+            )
+            for d in docs
+        ],
         total=total,
         page=page,
         size=size,
@@ -117,6 +153,8 @@ async def get_document(
         doc = await query_service.get_by_id(DocumentId(document_id))
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found") from None
+    if not _can_access_document(_user, doc.user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     results = await check_service.get_results_for_document(DocumentId(document_id))
     return DocumentDetailResponse(
         **DocumentResponse.model_validate(doc, from_attributes=True).model_dump(),
@@ -134,6 +172,8 @@ async def download_document(
         doc = await query_service.get_by_id(DocumentId(document_id))
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found") from None
+    if not _can_access_document(_user, doc.user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     stream = await query_service.get_file_bytes(DocumentId(document_id))
     return StreamingResponse(
         stream,
@@ -149,9 +189,14 @@ async def delete_document(
     _user: User = Depends(get_current_user),
 ) -> None:
     try:
-        await query_service.delete_document(DocumentId(document_id))
+        doc = await query_service.get_by_id(DocumentId(document_id))
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found") from None
+    if _user.role == UserRole.TEACHER and doc.user_id != _user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    if _user.role == UserRole.STUDENT and doc.user_id != _user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+    await query_service.delete_document(DocumentId(document_id))
 
 
 @router.get("/{document_id}/report")
@@ -166,6 +211,8 @@ async def export_report(
         doc = await query_service.get_by_id(DocumentId(document_id))
     except ValueError:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Document not found") from None
+    if not _can_access_document(_user, doc.user_id):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
     results = await check_service.get_results_for_document(DocumentId(document_id))
 
     if format == "csv":

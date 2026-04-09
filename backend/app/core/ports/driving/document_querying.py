@@ -26,6 +26,18 @@ class DocumentQueryUseCase(ABC):
         """Return a page of documents for a user and the total count."""
 
     @abstractmethod
+    async def list_all(
+        self,
+        *,
+        document_type: DocumentType | None = None,
+        status: DocumentStatus | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        pagination: Pagination | None = None,
+    ) -> tuple[list[Document], int]:
+        """Return a page of documents for all users and the total count."""
+
+    @abstractmethod
     async def get_by_id(self, document_id: DocumentId) -> Document:
         """Return a single document by id or raise."""
 

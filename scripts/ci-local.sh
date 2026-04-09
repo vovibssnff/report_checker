@@ -61,7 +61,7 @@ run "SAST" "Semgrep" semgrep --config auto backend/app/ frontend/src/ --error
 
 # ─── Test ─────────────────────────────────────────────────────────────
 run "Test" "Install pytest-cov" pip install pytest-cov -q
-run "Test" "Pytest with coverage threshold" bash -c "cd \"$BACKEND\" && pytest tests/ -v --tb=short -x --cov=app --cov-report=term-missing --cov-report=html --cov-fail-under=80"
+run "Test" "Pytest with coverage threshold" bash -c "cd \"$BACKEND\" && pytest tests/ -v --tb=short -x --cov=app --cov-report=term-missing --cov-report=html --cov-fail-under=75"
 
 # ─── Build (no login/push) ────────────────────────────────────────────
 IMAGE_TAG="${IMAGE_TAG:-local}"

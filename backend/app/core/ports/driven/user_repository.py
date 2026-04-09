@@ -20,3 +20,6 @@ class UserRepository(ABC):
 
     @abstractmethod
     async def create(self, user: User) -> User: ...
+
+    @abstractmethod
+    async def update(self, user: User) -> User: ...

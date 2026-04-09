@@ -87,6 +87,11 @@ def _build_services(app: FastAPI) -> None:
         auth_provider = ItmoIdAuthProvider(user_repo) if settings.AUTH_MODE == "itmo_id" else DevAuthProvider(user_repo)
         yield UserService(auth_provider, user_repo)
 
+    async def get_user_repo(
+        session: AsyncSession = Depends(get_db_session),
+    ):
+        yield PgUserRepository(session)
+
     from app.adapters.driving.web import dependencies
 
     app.dependency_overrides[dependencies.get_upload_service] = get_upload_service
@@ -94,6 +99,7 @@ def _build_services(app: FastAPI) -> None:
     app.dependency_overrides[dependencies.get_query_service] = get_query_service
     app.dependency_overrides[dependencies.get_rule_service] = get_rule_service
     app.dependency_overrides[dependencies.get_auth_service] = get_auth_service
+    app.dependency_overrides[dependencies.get_user_repo] = get_user_repo
 
 
 @asynccontextmanager
