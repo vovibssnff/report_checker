@@ -39,7 +39,7 @@ const AuthPage: React.FC = observer(() => {
   const [role, setRole] = useState<UserRole | null>(null);
 
   const navigate = useNavigate();
-  const { login, register, loading, error } = authStore;
+  const { login, register, loginWithItmo, fetchAuthMode, loading, error } = authStore;
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
@@ -67,7 +67,7 @@ const AuthPage: React.FC = observer(() => {
   };
 
   const handleItmoIdClick = () => {
-    // Placeholder: Sign in with ITMO ID
+    void loginWithItmo();
   };
 
   const handleRegisterSubmit = async () => {
@@ -90,6 +90,11 @@ const AuthPage: React.FC = observer(() => {
   const registerStep0Valid = name.trim() && email.trim() && role !== null;
   const canGoStep1 = registerStep0Valid;
   const canSubmitRegister = registerStep === 1 && password.length > 0 && passwordsMatch && !loading;
+  const itmoOnlyAuth = authStore.authMode === 'itmo_id';
+
+  useEffect(() => {
+    void fetchAuthMode();
+  }, [fetchAuthMode]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-white px-4">
@@ -111,7 +116,34 @@ const AuthPage: React.FC = observer(() => {
           </button>
         </div>
         <AnimatePresence mode="wait">
-          {mode === 'login' ? (
+          {itmoOnlyAuth ? (
+            <motion.div
+              key="itmo-login"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="flex flex-col"
+            >
+              <div className="flex flex-col gap-2 mb-10 px-4">
+                <h1 className="text-2xl">{t('auth.signIn')}</h1>
+                <p className="text-sm text-gray-500">{t('auth.signInSubtitle')}</p>
+              </div>
+              <div className="flex flex-col gap-8">
+                {error ? <p className="text-sm text-red-600 px-2 -mt-4">{error}</p> : null}
+                <Button
+                  type="button"
+                  typeStyle="secondary"
+                  fullWidth
+                  size="l"
+                  onClick={handleItmoIdClick}
+                  disabled={loading}
+                >
+                  {t('auth.signInWithItmo')}
+                </Button>
+              </div>
+            </motion.div>
+          ) : mode === 'login' ? (
             <motion.div
               key="login"
               initial={{ opacity: 0, y: 8 }}
@@ -256,28 +288,30 @@ const AuthPage: React.FC = observer(() => {
             </motion.div>
           )}
         </AnimatePresence>
-        <motion.p
-          className="mt-6 text-center text-sm text-gray-600"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          {mode === 'login' ? (
-            <>
-              {t('auth.noAccount')}{' '}
-              <button type="button" onClick={switchMode} className="text-black font-medium underline hover:no-underline">
-                {t('auth.registerLink')}
-              </button>
-            </>
-          ) : (
-            <>
-              {t('auth.haveAccount')}{' '}
-              <button type="button" onClick={switchMode} className="text-black font-medium underline hover:no-underline">
-                {t('auth.signInLink')}
-              </button>
-            </>
-          )}
-        </motion.p>
+        {!itmoOnlyAuth ? (
+          <motion.p
+            className="mt-6 text-center text-sm text-gray-600"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
+          >
+            {mode === 'login' ? (
+              <>
+                {t('auth.noAccount')}{' '}
+                <button type="button" onClick={switchMode} className="text-black font-medium underline hover:no-underline">
+                  {t('auth.registerLink')}
+                </button>
+              </>
+            ) : (
+              <>
+                {t('auth.haveAccount')}{' '}
+                <button type="button" onClick={switchMode} className="text-black font-medium underline hover:no-underline">
+                  {t('auth.signInLink')}
+                </button>
+              </>
+            )}
+          </motion.p>
+        ) : null}
       </div>
     </div>
   );

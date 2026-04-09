@@ -34,3 +34,14 @@ class DocumentRepository(ABC):
         date_to: datetime | None = None,
         pagination: Pagination | None = None,
     ) -> tuple[list[Document], int]: ...
+
+    @abstractmethod
+    async def list_all(
+        self,
+        *,
+        document_type: DocumentType | None = None,
+        status: DocumentStatus | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        pagination: Pagination | None = None,
+    ) -> tuple[list[Document], int]: ...

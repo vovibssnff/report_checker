@@ -17,7 +17,6 @@ from app.adapters.driven.persistence.repositories.document_repository import PgD
 from app.adapters.driven.persistence.repositories.user_repository import PgUserRepository
 from app.adapters.driven.security.pdf_validator import PDFValidator
 from app.adapters.driven.storage.s3_storage import S3Storage
-from app.adapters.driving.internal.router import router as internal_router
 from app.adapters.driving.web.middleware import RequestLoggingMiddleware
 from app.adapters.driving.web.v1.router import api_router
 from app.checkers.registry import RuleRegistry
@@ -87,6 +86,11 @@ def _build_services(app: FastAPI) -> None:
         auth_provider = ItmoIdAuthProvider(user_repo) if settings.AUTH_MODE == "itmo_id" else DevAuthProvider(user_repo)
         yield UserService(auth_provider, user_repo)
 
+    async def get_user_repo(
+        session: AsyncSession = Depends(get_db_session),
+    ):
+        yield PgUserRepository(session)
+
     from app.adapters.driving.web import dependencies
 
     app.dependency_overrides[dependencies.get_upload_service] = get_upload_service
@@ -94,6 +98,7 @@ def _build_services(app: FastAPI) -> None:
     app.dependency_overrides[dependencies.get_query_service] = get_query_service
     app.dependency_overrides[dependencies.get_rule_service] = get_rule_service
     app.dependency_overrides[dependencies.get_auth_service] = get_auth_service
+    app.dependency_overrides[dependencies.get_user_repo] = get_user_repo
 
 
 @asynccontextmanager
@@ -133,7 +138,7 @@ def create_app(*, use_default_services: bool = True) -> FastAPI:
     )
 
     app.include_router(api_router, prefix="/api/v1")
-    app.include_router(internal_router, prefix="/internal")
+    # app.include_router(internal_router, prefix="/internal")
 
     @app.exception_handler(HTTPException)
     async def on_http_exception(request: Request, exc: HTTPException) -> JSONResponse:

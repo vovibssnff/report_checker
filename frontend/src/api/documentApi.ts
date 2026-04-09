@@ -10,6 +10,7 @@ export interface BackendDocumentResponse {
   file_size: number;
   status: BackendDocumentStatus | string;
   source: string;
+  uploader_name?: string | null;
   uploaded_at: string;
   checked_at: string | null;
   page_count: number | null;

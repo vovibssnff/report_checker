@@ -7,6 +7,7 @@ import {
   uploadDocuments,
   type BackendDocumentResponse,
 } from '../api/documentApi';
+import { authStore } from './authStore';
 
 function mapBackendDocTypeToFrontend(docType: string): DocType {
   if (docType === 'vkr_template') return 'masters';
@@ -28,7 +29,12 @@ function mapBackendDocToItem(d: BackendDocumentResponse): DocumentItem {
   const docType = mapBackendDocTypeToFrontend(d.document_type);
   const status = mapBackendStatusToFrontend(d.status);
 
-  const normalizedAuthor = d.source && d.source !== 'user_upload' ? d.source : 'Не указан';
+  const normalizedAuthor =
+    authStore.user?.role === 'teacher' || authStore.user?.role === 'admin'
+      ? d.uploader_name ?? d.source ?? 'Не указан'
+      : d.source && d.source !== 'user_upload'
+        ? d.source
+        : 'Не указан';
 
   return {
     id: d.id,

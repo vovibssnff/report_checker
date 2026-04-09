@@ -98,6 +98,23 @@ class DocumentService(DocumentUploadUseCase, DocumentQueryUseCase, RuleManagemen
             pagination=pagination,
         )
 
+    async def list_all(
+        self,
+        *,
+        document_type: DocumentType | None = None,
+        status: DocumentStatus | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        pagination: Pagination | None = None,
+    ) -> tuple[list[Document], int]:
+        return await self._doc_repo.list_all(
+            document_type=document_type,
+            status=status,
+            date_from=date_from,
+            date_to=date_to,
+            pagination=pagination,
+        )
+
     async def get_by_id(self, document_id: DocumentId) -> Document:
         return await self._doc_repo.get_by_id(document_id)
 

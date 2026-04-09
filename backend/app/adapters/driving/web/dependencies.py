@@ -7,9 +7,11 @@ from jose import JWTError, jwt
 
 from app.adapters.driven.observability import get_logger, kv
 from app.config import settings
+from app.core.domain.value_objects import UserId, UserRole
 
 if TYPE_CHECKING:
     from app.core.domain.entities.user import User
+    from app.core.ports.driven.user_repository import UserRepository
     from app.core.ports.driving.auth import AuthUseCase
     from app.core.ports.driving.document_checking import DocumentCheckUseCase
     from app.core.ports.driving.document_querying import DocumentQueryUseCase
@@ -37,9 +39,13 @@ def get_auth_service() -> AuthUseCase:
     raise NotImplementedError
 
 
+def get_user_repo() -> UserRepository:
+    raise NotImplementedError
+
+
 async def get_current_user(
     request: Request,
-    auth_service: AuthUseCase = Depends(get_auth_service),
+    user_repo: UserRepository = Depends(get_user_repo),
 ) -> User:
     logger = get_logger(__name__)
     token = request.cookies.get("access_token")
@@ -55,7 +61,7 @@ async def get_current_user(
         logger.warning("auth_jwt_decode_failed %s", kv(path=request.url.path))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from err
     try:
-        return await auth_service.get_current_user(token)
+        return await user_repo.get_by_id(UserId(user_id))
     except ValueError as err:
         # Stale/invalid token subject should be treated as unauthenticated, not 500.
         logger.warning("auth_user_not_found %s", kv(path=request.url.path))
@@ -65,6 +71,15 @@ async def get_current_user(
 async def require_admin(
     user: User = Depends(get_current_user),
 ) -> User:
-    if user.role != "admin":
+    if user.role != UserRole.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return user
+
+
+def require_role(*roles: UserRole):
+    async def _require(user: User = Depends(get_current_user)) -> User:
+        if user.role not in roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient permissions")
+        return user
+
+    return _require

@@ -3,7 +3,7 @@ export interface User {
   email: string;
   name: string;
   organization?: string;
-  role?: string;
+  role: 'student' | 'teacher' | 'admin';
 }
 
 export interface DevLoginPayload {

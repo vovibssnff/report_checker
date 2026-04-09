@@ -89,6 +89,38 @@ class PgDocumentRepository(DocumentRepository):
         models = result.scalars().all()
         return [self._model_to_entity(m) for m in models], total
 
+    async def list_all(
+        self,
+        *,
+        document_type: DocumentType | None = None,
+        status: DocumentStatus | None = None,
+        date_from: datetime | None = None,
+        date_to: datetime | None = None,
+        pagination: Pagination | None = None,
+    ) -> tuple[list[Document], int]:
+        stmt = select(DocumentModel)
+
+        if document_type is not None:
+            stmt = stmt.where(DocumentModel.document_type == document_type.value)
+        if status is not None:
+            stmt = stmt.where(DocumentModel.status == status.value)
+        if date_from is not None:
+            stmt = stmt.where(DocumentModel.uploaded_at >= date_from)
+        if date_to is not None:
+            stmt = stmt.where(DocumentModel.uploaded_at <= date_to)
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = (await self._session.execute(count_stmt)).scalar_one()
+
+        stmt = stmt.order_by(DocumentModel.uploaded_at.desc())
+        if pagination is not None:
+            offset = (pagination.page - 1) * pagination.size
+            stmt = stmt.offset(offset).limit(pagination.size)
+
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+        return [self._model_to_entity(m) for m in models], total
+
     async def delete(self, document_id: DocumentId) -> None:
         model = await self._session.get(DocumentModel, document_id)
         if model is None:

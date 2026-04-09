@@ -30,6 +30,7 @@ class DocumentResponse(BaseModel):
     uploaded_at: datetime
     checked_at: datetime | None
     page_count: int | None = None
+    uploader_name: str | None = None
 
 
 class DocumentDetailResponse(DocumentResponse):

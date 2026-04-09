@@ -16,4 +16,5 @@ class UserModel(UUIDPrimaryKeyMixin, Base):
     role: Mapped[str] = mapped_column(String(20), nullable=False)
     password_hash: Mapped[str | None] = mapped_column(String, nullable=True)
     itmo_id: Mapped[str | None] = mapped_column(String, unique=True, nullable=True)
+    itmo_refresh_token: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=datetime.utcnow)

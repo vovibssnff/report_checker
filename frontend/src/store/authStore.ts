@@ -5,6 +5,7 @@ import * as authApi from '../api/authApi';
 
 export class AuthStore {
   user: User | null = null;
+  authMode: 'dev' | 'itmo_id' = 'dev';
   loading = false;
   error: string | null = null;
   initialized = false;
@@ -85,6 +86,32 @@ export class AuthStore {
         this.user = null;
         this.loading = false;
       });
+    }
+  };
+
+  fetchAuthMode = async () => {
+    try {
+      const mode = await authApi.getAuthMode();
+      runInAction(() => {
+        this.authMode = mode;
+      });
+    } catch {
+      // Keep default mode for resilience in local dev.
+    }
+  };
+
+  loginWithItmo = async () => {
+    this.error = null;
+    this.loading = true;
+    try {
+      const redirectUrl = await authApi.getLoginUrl();
+      window.location.href = redirectUrl;
+    } catch (e) {
+      runInAction(() => {
+        this.error = e instanceof Error ? e.message : 'ITMO ID login failed';
+        this.loading = false;
+      });
+      throw e;
     }
   };
 }
