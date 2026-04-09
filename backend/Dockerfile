@@ -9,8 +9,13 @@ COPY pyproject.toml .
 RUN pip install --no-cache-dir --prefix=/install ".[dev]"
 
 FROM python:3.13-slim-bookworm AS runtime
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y libssl3 openssl \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+COPY pyproject.toml .
+RUN pip install --no-cache-dir .
 RUN adduser --disabled-password --no-create-home appuser
-COPY --from=builder /install /usr/local
 COPY app/ /app/app/
 COPY alembic/ /app/alembic/
 COPY alembic.ini /app/

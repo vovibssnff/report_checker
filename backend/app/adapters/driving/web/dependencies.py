@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
 from jose import JWTError, jwt
@@ -61,7 +62,7 @@ async def get_current_user(
         logger.warning("auth_jwt_decode_failed %s", kv(path=request.url.path))
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from err
     try:
-        return await user_repo.get_by_id(UserId(user_id))
+        return await user_repo.get_by_id(UserId(UUID(user_id)))
     except ValueError as err:
         # Stale/invalid token subject should be treated as unauthenticated, not 500.
         logger.warning("auth_user_not_found %s", kv(path=request.url.path))

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
-from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -16,6 +15,7 @@ from app.adapters.driving.web.dependencies import (
     get_query_service,
     get_rule_service,
     get_upload_service,
+    get_user_repo,
 )
 from app.config import settings
 from app.core.domain.entities.user import User
@@ -37,39 +37,39 @@ def _request_with_token(token: str | None) -> Request:
 
 @pytest.mark.asyncio
 async def test_current_user_missing_cookie_raises_401() -> None:
-    auth_service = AsyncMock()
+    user_repo = AsyncMock()
     request = _request_with_token(None)
 
     with pytest.raises(Exception) as exc:
-        await get_current_user(request, auth_service)
+        await get_current_user(request, user_repo)
 
     assert getattr(exc.value, "status_code", None) == 401
-    auth_service.get_current_user.assert_not_awaited()
+    user_repo.get_by_id.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 async def test_current_user_invalid_token_raises_401() -> None:
-    auth_service = AsyncMock()
+    user_repo = AsyncMock()
     request = _request_with_token("definitely-not-a-jwt")
 
     with pytest.raises(Exception) as exc:
-        await get_current_user(request, auth_service)
+        await get_current_user(request, user_repo)
 
     assert getattr(exc.value, "status_code", None) == 401
-    auth_service.get_current_user.assert_not_awaited()
+    user_repo.get_by_id.assert_not_awaited()
 
 
 @pytest.mark.asyncio
 async def test_current_user_missing_subject_raises_401() -> None:
-    auth_service = AsyncMock()
+    user_repo = AsyncMock()
     token = jwt.encode({"foo": "bar"}, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     request = _request_with_token(token)
 
     with pytest.raises(Exception) as exc:
-        await get_current_user(request, auth_service)
+        await get_current_user(request, user_repo)
 
     assert getattr(exc.value, "status_code", None) == 401
-    auth_service.get_current_user.assert_not_awaited()
+    user_repo.get_by_id.assert_not_awaited()
 
 
 @pytest.mark.asyncio
@@ -85,12 +85,13 @@ async def test_current_user_success_returns_user() -> None:
         itmo_id=None,
         created_at=datetime.now(UTC),
     )
-    auth_service = SimpleNamespace(get_current_user=AsyncMock(return_value=user))
+    user_repo = AsyncMock()
+    user_repo.get_by_id.return_value = user
 
-    resolved = await get_current_user(request, auth_service)
+    resolved = await get_current_user(request, user_repo)
 
     assert resolved == user
-    auth_service.get_current_user.assert_awaited_once_with(token)
+    user_repo.get_by_id.assert_awaited_once_with(user_id)
 
 
 @pytest.mark.asyncio
@@ -98,10 +99,11 @@ async def test_current_user_value_error_from_service_maps_to_401() -> None:
     user_id = UserId(uuid4())
     token = jwt.encode({"sub": str(user_id)}, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
     request = _request_with_token(token)
-    auth_service = SimpleNamespace(get_current_user=AsyncMock(side_effect=ValueError("not found")))
+    user_repo = AsyncMock()
+    user_repo.get_by_id.side_effect = ValueError("not found")
 
     with pytest.raises(Exception) as exc:
-        await get_current_user(request, auth_service)
+        await get_current_user(request, user_repo)
 
     assert getattr(exc.value, "status_code", None) == 401
 
@@ -117,3 +119,5 @@ def test_service_dependency_placeholders_raise_not_implemented() -> None:
         get_rule_service()
     with pytest.raises(NotImplementedError):
         get_auth_service()
+    with pytest.raises(NotImplementedError):
+        get_user_repo()

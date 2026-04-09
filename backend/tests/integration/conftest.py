@@ -210,12 +210,16 @@ async def integration_app(session_factory, s3_config: dict[str, str]):
             auth_provider = DevAuthProvider(ur)
             yield UserService(auth_provider, ur)
 
+    async def _make_user_repo(sess: AsyncSession = Depends(db_session.get_db_session)):
+        yield PgUserRepository(sess)
+
     application.dependency_overrides[db_session.get_db_session] = get_test_db_session
     application.dependency_overrides[dependencies.get_upload_service] = _make_upload
     application.dependency_overrides[dependencies.get_check_service] = _make_check
     application.dependency_overrides[dependencies.get_query_service] = _make_upload
     application.dependency_overrides[dependencies.get_rule_service] = _make_upload
     application.dependency_overrides[dependencies.get_auth_service] = _make_auth
+    application.dependency_overrides[dependencies.get_user_repo] = _make_user_repo
     return application
 
 

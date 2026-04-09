@@ -17,6 +17,7 @@ from app.adapters.driven.persistence.repositories.document_repository import PgD
 from app.adapters.driven.persistence.repositories.user_repository import PgUserRepository
 from app.adapters.driven.security.pdf_validator import PDFValidator
 from app.adapters.driven.storage.s3_storage import S3Storage
+from app.adapters.driving.internal.router import router as internal_router
 from app.adapters.driving.web.middleware import RequestLoggingMiddleware
 from app.adapters.driving.web.v1.router import api_router
 from app.checkers.registry import RuleRegistry
@@ -138,7 +139,7 @@ def create_app(*, use_default_services: bool = True) -> FastAPI:
     )
 
     app.include_router(api_router, prefix="/api/v1")
-    # app.include_router(internal_router, prefix="/internal")
+    app.include_router(internal_router, prefix="/internal")
 
     @app.exception_handler(HTTPException)
     async def on_http_exception(request: Request, exc: HTTPException) -> JSONResponse:

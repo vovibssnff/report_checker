@@ -23,8 +23,7 @@ from app.adapters.driving.web.schemas.document import (
     DocumentDetailResponse,
     DocumentResponse,
 )
-from app.core.domain.value_objects import DocumentId, DocumentStatus, DocumentType, Pagination
-from app.core.domain.value_objects import UserRole
+from app.core.domain.value_objects import DocumentId, DocumentStatus, DocumentType, Pagination, UserRole
 
 if TYPE_CHECKING:
     from app.core.domain.entities.user import User
