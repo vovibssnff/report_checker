@@ -18,7 +18,7 @@ async def test_upload_check_retrieve_flow(
     upload_resp = await auth_integration_client.post(
         "/api/v1/documents/",
         files={"files": ("flow_test.pdf", INTEGRATION_PDF, "application/pdf")},
-        data={"document_type": "vkr_template"},
+        data={"document_type": "practice_report"},
     )
     assert upload_resp.status_code == 201
     docs = upload_resp.json()
@@ -87,7 +87,7 @@ async def test_delete_cleans_up(
     upload_resp = await auth_integration_client.post(
         "/api/v1/documents/",
         files={"files": ("to_delete.pdf", INTEGRATION_PDF, "application/pdf")},
-        data={"document_type": "vkr_template"},
+        data={"document_type": "practice_report"},
     )
     doc_id = upload_resp.json()[0]["id"]
 

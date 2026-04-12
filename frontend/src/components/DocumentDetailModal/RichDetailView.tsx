@@ -499,6 +499,15 @@ const RichDetailView: React.FC<RichDetailViewProps> = ({ detail, onGoToPage, too
     case 'margins':
       return <MarginsDetail violations={detail.violations} onGoToPage={onGoToPage} highlights={pdfHighlights ?? highlights} onHighlightHover={onHighlightHover} onHighlightLeave={onHighlightLeave} pdfFile={pdfFile} />;
 
+    case 'bullets':
+      return (
+        <ul className="list-disc pl-4 text-xs text-gray-600 space-y-1 max-w-md">
+          {detail.items.map((line, i) => (
+            <li key={i}>{line}</li>
+          ))}
+        </ul>
+      );
+
     default:
       return null;
   }

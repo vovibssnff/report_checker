@@ -184,20 +184,54 @@
         }
       },
       "practice": {
+        "appendices": {
+          "labeling": "Appendix labeling"
+        },
         "content": {
           "min_pages": "Minimum page count"
+        },
+        "enumerations": {
+          "format": "Lists and enumerations"
+        },
+        "figures": {
+          "caption_format": "Figure captions",
+          "numbering": "Figure numbering"
         },
         "formatting": {
           "page_size": "Page size",
           "margins": "Page margins",
           "font_family": "Main font",
           "font_size": "Font size",
-          "line_spacing": "Line spacing"
+          "line_spacing": "Line spacing",
+          "paragraph_indent": "Paragraph indent",
+          "alignment": "Text alignment"
+        },
+        "formulas": {
+          "numbering": "Formula numbering"
+        },
+        "headings": {
+          "structural_elements": "Structural elements",
+          "new_page": "New page for sections",
+          "section_numbering": "Section heading numbering"
+        },
+        "pagination": {
+          "arabic_numbers": "Page numbering (Arabic numerals)",
+          "position": "Page number position"
         },
         "structure": {
           "required_sections": "Required sections",
           "stage_descriptions": "Practice stage descriptions",
           "screenshots": "Screenshots"
+        },
+        "tables": {
+          "caption_format": "Table captions",
+          "numbering": "Table numbering"
+        },
+        "title_page": {
+          "content": "Title page"
+        },
+        "toc": {
+          "content": "Table of contents"
         }
       }
     },
@@ -230,6 +264,9 @@
       "required_sections_format_invalid": "Required sections were found, but some headings are formatted incorrectly",
       "required_sections_ok": "All required sections are present in correct order",
       "sections_order_invalid": "Section order is incorrect",
+      "toc_missing": "Table of contents page not found",
+      "toc_invalid": "Table of contents does not meet requirements",
+      "toc_ok": "Table of contents is valid",
       "references_ok": "References list is present",
       "references_missing": "References list not found",
       "figure_caption_invalid": "Invalid figure caption format ({{count}} items)",
@@ -257,6 +294,7 @@
       "font_size_tooltip": "Small font size ({{size}}pt)"
     },
     "issues": {
+      "section_wrong_order_pdf": "In the PDF, section «{{later}}» appears before «{{earlier}}»; required order: «{{earlier}}» then «{{later}}».",
       "not_uppercase": "not in uppercase",
       "not_centered": "not centered",
       "not_right_aligned": "not right-aligned",
@@ -265,7 +303,10 @@
       "missing_dot_after_number": "A dot is required after section number: {{number}} (p. {{page}})",
       "invalid_label": "Invalid letter: {{label}}",
       "wrong_order": "Expected '{{expected}}', found '{{found}}'",
-      "section_before_after": "'{{before}}' found after '{{after}}'"
+      "section_before_after": "'{{before}}' found after '{{after}}'",
+      "toc_entries_missing": "TOC lines with page numbers were not detected",
+      "toc_dotted_leaders_missing": "No dotted leaders between title and page number in TOC",
+      "toc_titles_mismatch": "First TOC entries do not match headings extracted from the PDF"
     },
     "marginSides": {
       "left": "left",

@@ -20,6 +20,7 @@ class TextBlock:
     is_bold: bool
     is_italic: bool
     bbox: tuple[float, float, float, float]
+    color: tuple[float, ...] | None = None
     alignment: str | None = None
 
 
@@ -98,6 +99,15 @@ def _chars_to_block(chars: list[dict]) -> TextBlock:
     bottom = max(ch.get("bottom", 0) for ch in chars)
     is_bold = "Bold" in font_name or "bold" in font_name
     is_italic = "Italic" in font_name or "italic" in font_name or "Oblique" in font_name
+    color: tuple[float, ...] | None = None
+    for ch in chars:
+        raw_color = ch.get("non_stroking_color")
+        if isinstance(raw_color, (tuple, list)):
+            try:
+                color = tuple(float(v) for v in raw_color)
+                break
+            except (TypeError, ValueError):
+                continue
     return TextBlock(
         text=text,
         font_name=font_name,
@@ -105,6 +115,7 @@ def _chars_to_block(chars: list[dict]) -> TextBlock:
         is_bold=is_bold,
         is_italic=is_italic,
         bbox=(x0, top, x1, bottom),
+        color=color,
     )
 
 

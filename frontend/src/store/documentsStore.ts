@@ -12,7 +12,7 @@ import { authStore } from './authStore';
 function mapBackendDocTypeToFrontend(docType: string): DocType {
   if (docType === 'vkr_template') return 'masters';
   if (docType === 'practice_report') return 'bachelors';
-  return 'masters';
+  return 'bachelors';
 }
 
 function mapBackendStatusToFrontend(status: string): DocumentStatus {
@@ -90,7 +90,7 @@ export class DocumentsStore {
     this.error = null;
     try {
       await uploadDocuments([file], backendDocumentType);
-      await this.loadDocuments();
+      await this.loadDocuments({ backendDocumentType: 'practice_report' });
     } catch (e) {
       runInAction(() => {
         this.error = e instanceof Error ? e.message : 'Failed to upload document';

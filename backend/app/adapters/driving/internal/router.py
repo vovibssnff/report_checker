@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Form, UploadFile
+from fastapi import APIRouter, Depends, Form, HTTPException, UploadFile, status
 
 from app.adapters.driving.internal.schemas import InternalDocumentResponse
 from app.adapters.driving.web.dependencies import (
@@ -32,8 +32,21 @@ async def upload_and_check(
     check_service: DocumentCheckUseCase = Depends(get_check_service),
     query_service: DocumentQueryUseCase = Depends(get_query_service),
 ) -> list[InternalDocumentResponse]:
+    try:
+        dt = DocumentType(document_type)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid document_type: {document_type}",
+        ) from exc
+    if dt == DocumentType.VKR_TEMPLATE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="VKR template uploads are disabled; use practice_report",
+        )
+
     file_tuples = [(f.filename or "unknown", await f.read()) for f in files]
-    docs = await upload_service.upload_internal(DocumentType(document_type), file_tuples, source)
+    docs = await upload_service.upload_internal(dt, file_tuples, source)
     responses: list[InternalDocumentResponse] = []
     for doc in docs:
         await check_service.run_checks_for_document(DocumentId(doc.id))

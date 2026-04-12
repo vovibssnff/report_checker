@@ -19,35 +19,7 @@ function getRuleLabelKey(cr: BackendCheckResultResponse): string {
     return `report.ruleLabels.${prefix}.formatting.font_family`;
   }
 
-  const knownKeys = new Set([
-    'vkr.headings.structural_elements',
-    'vkr.headings.new_page',
-    'vkr.headings.section_numbering',
-    'vkr.structure.required_sections',
-    'vkr.formatting.page_size',
-    'vkr.formatting.margins',
-    'vkr.formatting.line_spacing',
-    'vkr.formatting.paragraph_indent',
-    'vkr.formatting.alignment',
-    'vkr.appendices.labeling',
-    'vkr.figures.caption_format',
-    'vkr.figures.numbering',
-    'vkr.formulas.numbering',
-    'vkr.pagination.arabic_numbers',
-    'vkr.pagination.position',
-    'vkr.references.presence',
-    'vkr.tables.caption_format',
-    'vkr.tables.numbering',
-    'practice.content.min_pages',
-    'practice.formatting.page_size',
-    'practice.formatting.margins',
-    'practice.formatting.line_spacing',
-    'practice.structure.required_sections',
-    'practice.structure.stage_descriptions',
-    'practice.structure.screenshots',
-  ]);
-
-  if (knownKeys.has(cr.rule_code)) {
+  if (cr.rule_code.startsWith('vkr.') || cr.rule_code.startsWith('practice.')) {
     return `report.ruleLabels.${cr.rule_code}`;
   }
 
@@ -145,6 +117,22 @@ function extractRichDetail(cr: BackendCheckResultResponse): RichDetail | undefin
 
   if ('missing_stages' in d && Array.isArray(d.missing_stages)) {
     return { type: 'stages', missing: d.missing_stages as number[] };
+  }
+
+  if ('order_violations' in d && Array.isArray(d.order_violations)) {
+    const ov = d.order_violations as { before: string; after: string }[];
+    const items = ov.map((o) =>
+      t('report.issues.section_wrong_order_pdf', {
+        earlier: translateSection(o.before),
+        later: translateSection(o.after),
+      }),
+    );
+    return { type: 'bullets', items };
+  }
+
+  if ('issues' in d && Array.isArray(d.issues) && cr.message === 'toc_invalid') {
+    const items = (d.issues as string[]).map((issue) => translateIssue(issue));
+    return { type: 'bullets', items };
   }
 
   if ('violations' in d && Array.isArray(d.violations) && (cr.rule_code.includes('.margins') || cr.rule_code.includes('.formatting.margins'))) {

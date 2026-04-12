@@ -187,20 +187,54 @@
         }
       },
       "practice": {
+        "appendices": {
+          "labeling": "Обозначение приложений"
+        },
         "content": {
           "min_pages": "Минимальное количество страниц"
+        },
+        "enumerations": {
+          "format": "Оформление перечислений"
+        },
+        "figures": {
+          "caption_format": "Подписи рисунков",
+          "numbering": "Нумерация рисунков"
         },
         "formatting": {
           "page_size": "Формат страницы",
           "margins": "Поля страницы",
           "font_family": "Основной шрифт",
           "font_size": "Размер шрифта",
-          "line_spacing": "Межстрочный интервал"
+          "line_spacing": "Межстрочный интервал",
+          "paragraph_indent": "Абзацный отступ",
+          "alignment": "Выравнивание текста"
+        },
+        "formulas": {
+          "numbering": "Нумерация формул"
+        },
+        "headings": {
+          "structural_elements": "Структурные элементы",
+          "new_page": "Новая страница для разделов",
+          "section_numbering": "Нумерация заголовков разделов"
+        },
+        "pagination": {
+          "arabic_numbers": "Нумерация страниц (арабские цифры)",
+          "position": "Положение номера страницы"
         },
         "structure": {
           "required_sections": "Обязательные разделы",
           "stage_descriptions": "Описание этапов практики",
           "screenshots": "Наличие скриншотов"
+        },
+        "tables": {
+          "caption_format": "Подписи таблиц",
+          "numbering": "Нумерация таблиц"
+        },
+        "title_page": {
+          "content": "Титульный лист"
+        },
+        "toc": {
+          "content": "Содержание (оглавление)"
         }
       }
     },
@@ -233,6 +267,9 @@
       "required_sections_format_invalid": "Обязательные разделы найдены, но часть из них оформлена некорректно",
       "required_sections_ok": "Все обязательные разделы присутствуют в правильном порядке",
       "sections_order_invalid": "Нарушен порядок разделов",
+      "toc_missing": "Страница «Содержание» не найдена",
+      "toc_invalid": "Оглавление не соответствует требованиям",
+      "toc_ok": "Оглавление соответствует требованиям",
       "references_ok": "Список литературы присутствует",
       "references_missing": "Список литературы не найден",
       "figure_caption_invalid": "Неверный формат подписи рисунков ({{count}} шт.)",
@@ -268,7 +305,10 @@
       "missing_dot_after_number": "После номера раздела нужна точка: {{number}} (стр. {{page}})",
       "invalid_label": "Недопустимая буква: {{label}}",
       "wrong_order": "Ожидалось «{{expected}}», найдено «{{found}}»",
-      "section_before_after": "«{{before}}» найден после «{{after}}»"
+      "section_wrong_order_pdf": "В PDF раздел «{{later}}» стоит раньше, чем «{{earlier}}»; требуемый порядок: сначала «{{earlier}}», затем «{{later}}».",
+      "toc_entries_missing": "В оглавлении не найдены строки с номерами страниц",
+      "toc_dotted_leaders_missing": "Между заголовком и номером страницы нет отточия (точек)",
+      "toc_titles_mismatch": "Первые пункты оглавления не совпадают с заголовками в тексте (по данным PDF)"
     },
     "marginSides": {
       "left": "левое",

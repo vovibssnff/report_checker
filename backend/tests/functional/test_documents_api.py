@@ -24,7 +24,7 @@ async def test_upload_document(auth_client: httpx.AsyncClient, test_user):
     resp = await auth_client.post(
         "/api/v1/documents/",
         files={"files": ("report.pdf", FAKE_PDF, "application/pdf")},
-        data={"document_type": "vkr_template"},
+        data={"document_type": "practice_report"},
     )
     assert resp.status_code == 201
     body = resp.json()
@@ -32,9 +32,19 @@ async def test_upload_document(auth_client: httpx.AsyncClient, test_user):
     assert len(body) == 1
     doc = body[0]
     assert doc["filename"] == "report.pdf"
-    assert doc["document_type"] == "vkr_template"
+    assert doc["document_type"] == "practice_report"
     # Upload runs checks inline; functional tests use a mock engine with no outputs → passed.
     assert doc["status"] == "passed"
+
+
+async def test_upload_vkr_template_rejected(auth_client: httpx.AsyncClient, test_user):
+    resp = await auth_client.post(
+        "/api/v1/documents/",
+        files={"files": ("report.pdf", FAKE_PDF, "application/pdf")},
+        data={"document_type": "vkr_template"},
+    )
+    assert resp.status_code == 400
+    assert "VKR" in resp.json()["detail"]
 
 
 async def test_upload_multiple_documents(auth_client: httpx.AsyncClient):

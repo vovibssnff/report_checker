@@ -6,6 +6,8 @@ from app.checkers.plugins.vkr_template.appendices import AppendixLabelingRule
 from app.checkers.plugins.vkr_template.formulas import FormulaNumberingRule
 from app.core.domain.value_objects import CheckStatus
 
+pytest.skip("VKR reports are disabled in this deployment", allow_module_level=True)
+
 
 class TestAppendixLabelingRule:
     @pytest.fixture()

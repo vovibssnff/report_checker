@@ -30,7 +30,8 @@ export type RichDetail =
   | { type: 'counter'; found: number; required: number; unit?: string }
   | { type: 'sections'; missing: string[] }
   | { type: 'stages'; missing: number[] }
-  | { type: 'margins'; violations: { page: number; issues: MarginIssue[] }[] };
+  | { type: 'margins'; violations: { page: number; issues: MarginIssue[] }[] }
+  | { type: 'bullets'; items: string[] };
 
 export interface ReportSection {
   title: string;

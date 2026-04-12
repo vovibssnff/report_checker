@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import Counter
 from itertools import groupby
 from typing import TYPE_CHECKING, Any
@@ -11,6 +12,40 @@ if TYPE_CHECKING:
     from app.checkers.pdf_parser import ParsedPage, ParsedPDF
 
 _PTS_TO_MM = 1 / 2.835
+_NON_WORD_RE = re.compile(r"[^a-zа-я0-9]+", re.IGNORECASE)
+_TITLE_PAGE_MARKERS = (
+    "министерство науки и высшего образования",
+    "университет итмо",
+    "факультет",
+)
+
+
+def _is_black_color(color: tuple[float, ...] | None) -> bool:
+    if color is None:
+        return True
+    if len(color) == 1:
+        return color[0] <= 0.05
+    if len(color) >= 3:
+        return all(channel <= 0.05 for channel in color[:3])
+    return True
+
+
+def _normalize(text: str) -> str:
+    return " ".join(_NON_WORD_RE.sub(" ", text.lower().replace("ё", "е")).split())
+
+
+def _detect_special_pages(pdf: ParsedPDF) -> set[int]:
+    special_pages: set[int] = set()
+    for page in pdf.pages:
+        normalized_lines = [_normalize(line) for line in page.lines if line.strip()]
+        blob = " ".join(normalized_lines)
+        title_markers_count = sum(1 for marker in _TITLE_PAGE_MARKERS if marker in blob)
+        if title_markers_count >= 2:
+            special_pages.add(page.number)
+
+        if page.number <= 4 and any(line.startswith("задание") for line in normalized_lines[:10]):
+            special_pages.add(page.number)
+    return special_pages
 
 
 def _is_block_inside_table(
@@ -196,6 +231,11 @@ class FontRule(BaseRule):
         font_counts: Counter[str] = Counter()
         small_font_pages: set[int] = set()
         small_font_locations: list[dict[str, Any]] = []
+        non_black_pages: set[int] = set()
+        non_black_locations: list[dict[str, Any]] = []
+        bold_body_pages: set[int] = set()
+        bold_body_locations: list[dict[str, Any]] = []
+        special_pages = _detect_special_pages(pdf)
 
         for page in pdf.pages:
             for tb in page.text_blocks:
@@ -208,6 +248,37 @@ class FontRule(BaseRule):
                             "page": page.number,
                             "text": tb.text.strip()[:80],
                             "font_size": round(tb.font_size, 1),
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
+                        }
+                    )
+                if not _is_black_color(tb.color):
+                    non_black_pages.add(page.number)
+                    x0, top, x1, bottom = tb.bbox
+                    non_black_locations.append(
+                        {
+                            "page": page.number,
+                            "text": tb.text.strip()[:80],
+                            "color": tb.color,
+                            "location": {
+                                "x0": round(x0, 2),
+                                "y0": round(top, 2),
+                                "x1": round(x1, 2),
+                                "y1": round(bottom, 2),
+                            },
+                        }
+                    )
+                if page.number not in special_pages and tb.is_bold and len(tb.text.strip()) > 40:
+                    bold_body_pages.add(page.number)
+                    x0, top, x1, bottom = tb.bbox
+                    bold_body_locations.append(
+                        {
+                            "page": page.number,
+                            "text": tb.text.strip()[:80],
                             "location": {
                                 "x0": round(x0, 2),
                                 "y0": round(top, 2),
@@ -242,6 +313,22 @@ class FontRule(BaseRule):
                     },
                 )
             )
+        if non_black_pages:
+            results.append(
+                RuleResult(
+                    status=CheckStatus.FAILED,
+                    message="font_color_not_black",
+                    details={"pages": sorted(non_black_pages), "locations": non_black_locations},
+                )
+            )
+        if bold_body_pages:
+            results.append(
+                RuleResult(
+                    status=CheckStatus.FAILED,
+                    message="bold_in_body",
+                    details={"pages": sorted(bold_body_pages), "locations": bold_body_locations},
+                )
+            )
 
         if not results:
             results.append(
@@ -266,8 +353,11 @@ class LineSpacingRule(BaseRule):
         expected = config.get("expected_spacing", 1.5)
         tolerance = config.get("tolerance", 0.3)
         bad_pages: list[int] = []
+        special_pages = _detect_special_pages(pdf)
 
         for page in pdf.pages:
+            if page.number in special_pages:
+                continue
             blocks = sorted(page.text_blocks, key=lambda b: (b.bbox[1], b.bbox[0]))
             spacings: list[float] = []
             for i in range(len(blocks) - 1):
@@ -316,8 +406,11 @@ class ParagraphIndentRule(BaseRule):
         tolerance_pt = tolerance_mm / _PTS_TO_MM
         bad_pages: list[int] = []
         bad_indent_locations: list[dict[str, Any]] = []
+        special_pages = _detect_special_pages(pdf)
 
         for page in pdf.pages:
+            if page.number in special_pages:
+                continue
             blocks = sorted(
                 [b for b in page.text_blocks if not _is_text_block_in_any_table(page, b.bbox)],
                 key=lambda b: (b.bbox[1], b.bbox[0]),
@@ -388,8 +481,11 @@ class AlignmentRule(BaseRule):
     async def check(self, pdf: ParsedPDF, config: dict[str, Any]) -> list[RuleResult]:
         bad_pages: list[int] = []
         misaligned_locations: list[dict[str, Any]] = []
+        special_pages = _detect_special_pages(pdf)
 
         for page in pdf.pages:
+            if page.number in special_pages:
+                continue
             if not page.text_blocks:
                 continue
             long_blocks = [

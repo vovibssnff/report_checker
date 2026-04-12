@@ -57,7 +57,7 @@ def _is_appendix_heading_candidate(text: str, *, source: str, is_uppercase: bool
     if source == "heading":
         return True
     if source == "block":
-        return is_uppercase and bool(is_centered)
+        return len(tokens) <= 6
     if source == "line":
         return len(tokens) <= 6
     return False
@@ -73,6 +73,7 @@ def _is_appendix_heading_candidate(text: str, *, source: str, is_uppercase: bool
 class AppendixLabelingRule(BaseRule):
     async def check(self, pdf: ParsedPDF, config: dict[str, Any]) -> list[RuleResult]:
         found_labels: list[str] = []
+        appendix_pages: set[int] = set()
         page_map = {p.number: p for p in pdf.pages}
         candidates: list[dict[str, Any]] = []
         for page in pdf.pages:
@@ -81,7 +82,13 @@ class AppendixLabelingRule(BaseRule):
                 if not raw:
                     continue
                 candidates.append(
-                    {"source": "line", "text": raw, "is_uppercase": _is_uppercase_heading(raw), "is_centered": None}
+                    {
+                        "source": "line",
+                        "text": raw,
+                        "is_uppercase": _is_uppercase_heading(raw),
+                        "is_centered": None,
+                        "page": page.number,
+                    }
                 )
             for block in page.text_blocks:
                 raw = block.text.strip()
@@ -93,6 +100,7 @@ class AppendixLabelingRule(BaseRule):
                         "text": raw,
                         "is_uppercase": _is_uppercase_heading(raw),
                         "is_centered": _is_centered(block, page),
+                        "page": page.number,
                     }
                 )
         for heading in pdf.headings:
@@ -106,7 +114,13 @@ class AppendixLabelingRule(BaseRule):
                 if matched_block:
                     center_ok = _is_centered(matched_block, heading_page)
             candidates.append(
-                {"source": "heading", "text": raw, "is_uppercase": _is_uppercase_heading(raw), "is_centered": center_ok}
+                {
+                    "source": "heading",
+                    "text": raw,
+                    "is_uppercase": _is_uppercase_heading(raw),
+                    "is_centered": center_ok,
+                    "page": heading.page_number,
+                }
             )
 
         for candidate in candidates:
@@ -124,6 +138,7 @@ class AppendixLabelingRule(BaseRule):
             match = _APPENDIX_PATTERN.search(text)
             if match:
                 found_labels.append(match.group(1).upper())
+                appendix_pages.add(candidate["page"])
                 continue
 
             if not match:
@@ -132,6 +147,7 @@ class AppendixLabelingRule(BaseRule):
                 match = re.search(r"приложение([а-я])\b", merged, re.IGNORECASE)
                 if match:
                     found_labels.append(match.group(1).upper())
+                    appendix_pages.add(candidate["page"])
 
         if not found_labels:
             return [
@@ -142,6 +158,7 @@ class AppendixLabelingRule(BaseRule):
             ]
 
         issues: list[dict[str, Any]] = []
+        format_issues: list[dict[str, Any]] = []
         for i, label in enumerate(found_labels):
             if label not in _VALID_LABELS:
                 issues.append({"type": "invalid_label", "label": label})
@@ -150,12 +167,32 @@ class AppendixLabelingRule(BaseRule):
                 if label != expected:
                     issues.append({"type": "wrong_order", "expected": expected, "found": label})
 
-        if issues:
+        for candidate in candidates:
+            normalized = _normalize_for_search(candidate["text"])
+            if not normalized.startswith("приложение"):
+                continue
+            if not candidate["is_uppercase"]:
+                format_issues.append(
+                    {"type": "not_uppercase", "page": candidate["page"], "text": candidate["text"][:80]}
+                )
+            if candidate["source"] in {"block", "heading"} and candidate["is_centered"] is False:
+                format_issues.append(
+                    {"type": "not_centered", "page": candidate["page"], "text": candidate["text"][:80]}
+                )
+
+        for page in pdf.pages:
+            if page.number not in appendix_pages:
+                continue
+            top_lines = [ln.strip() for ln in page.lines[:5] if ln.strip()]
+            if top_lines and not _normalize_for_search(top_lines[0]).startswith("приложение"):
+                format_issues.append({"type": "not_new_page", "page": page.number})
+
+        if issues or format_issues:
             return [
                 RuleResult(
                     status=CheckStatus.FAILED,
                     message="appendices_labeling_invalid",
-                    details={"found_labels": found_labels, "issues": issues},
+                    details={"found_labels": found_labels, "issues": [*issues, *format_issues]},
                 )
             ]
         return [

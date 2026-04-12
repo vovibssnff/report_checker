@@ -47,12 +47,27 @@ class TableCaptionFormatRule(BaseRule):
                 mention = _TABLE_MENTION.search(text)
                 if not mention:
                     continue
+                issues: list[str] = []
                 if not _TABLE_PATTERN.search(text):
+                    issues.append("format")
+                if text.rstrip().endswith("."):
+                    issues.append("caption_ends_with_period")
+                page_width_pt = page.width_mm / (1 / 2.835)
+                block_center = (block.bbox[0] + block.bbox[2]) / 2
+                if abs(block_center - page_width_pt / 2) < 30:
+                    issues.append("centered_instead_of_left")
+                if block.bbox[0] > 120:
+                    issues.append("has_paragraph_indent")
+                has_table_below = any(tb.bbox[1] >= block.bbox[3] for tb in page.tables)
+                if not has_table_below:
+                    issues.append("caption_not_above_table")
+                if issues:
                     x0, top, x1, bottom = block.bbox
                     bad_captions.append(
                         {
                             "page": page.number,
                             "text": text,
+                            "issues": issues,
                             "location": {
                                 "x0": round(x0, 2),
                                 "y0": round(top, 2),

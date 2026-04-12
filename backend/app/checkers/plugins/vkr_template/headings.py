@@ -22,9 +22,9 @@ _STRUCTURAL_ELEMENTS = [
 
 _SECTION_NUMBER_RE = re.compile(r"^(\d+\.(?:\d+\.?)*)\s+")
 _SECTION_NUMBER_MISSING_DOT_RE = re.compile(r"^(\d+)\s+")
+_CHAPTER_HEADING_RE = re.compile(r"^\d+\s+\S+")
 _MAX_STRUCTURAL_TOKENS = 10
 _NON_WORD_RE = re.compile(r"[^a-zа-я0-9]+", re.IGNORECASE)
-_RIGHT_ALIGN_TOLERANCE_PT = 35
 
 
 def _looks_like_structural_heading(text: str) -> bool:
@@ -51,13 +51,8 @@ def _looks_like_structural_heading(text: str) -> bool:
     return False
 
 
-def _is_appendix_heading(text: str) -> bool:
-    stripped = text.strip()
-    if not stripped:
-        return False
-    lowered = stripped.lower().replace("ё", "е")
-    normalized = " ".join(_NON_WORD_RE.sub(" ", lowered).split())
-    return normalized.startswith("приложение")
+def _is_toc_page(lines: list[str]) -> bool:
+    return any(line.strip().lower() in {"содержание", "оглавление"} for line in lines[:8])
 
 
 @rule(
@@ -72,6 +67,8 @@ class StructuralElementsRule(BaseRule):
         violations: list[dict[str, Any]] = []
 
         for page in pdf.pages:
+            if _is_toc_page(page.lines):
+                continue
             page_center_pt = page.width_mm / _PTS_TO_MM / 2
             for tb in page.text_blocks:
                 text = tb.text.strip()
@@ -81,16 +78,14 @@ class StructuralElementsRule(BaseRule):
                 issues: list[str] = []
                 if text != text.upper():
                     issues.append("not_uppercase")
+                if text.rstrip().endswith("."):
+                    issues.append("ends_with_period")
+                if not tb.is_bold:
+                    issues.append("not_bold")
 
-                if _is_appendix_heading(text):
-                    page_width_pt = page.width_mm / _PTS_TO_MM
-                    right_offset = page_width_pt - tb.bbox[2]
-                    if right_offset > _RIGHT_ALIGN_TOLERANCE_PT:
-                        issues.append("not_right_aligned")
-                else:
-                    block_center = (tb.bbox[0] + tb.bbox[2]) / 2
-                    if abs(block_center - page_center_pt) > 30:
-                        issues.append("not_centered")
+                block_center = (tb.bbox[0] + tb.bbox[2]) / 2
+                if abs(block_center - page_center_pt) > 30:
+                    issues.append("not_centered")
 
                 if issues:
                     x0, top, x1, bottom = tb.bbox
@@ -191,6 +186,9 @@ class SectionNumberingRule(BaseRule):
                 if not tb.is_bold:
                     continue
                 stripped = tb.text.strip()
+                if _CHAPTER_HEADING_RE.match(stripped):
+                    numbered_headings.append((stripped.split()[0], page.number))
+                    continue
                 missing_dot_match = _SECTION_NUMBER_MISSING_DOT_RE.match(stripped)
                 if missing_dot_match:
                     issues.append(
@@ -204,6 +202,11 @@ class SectionNumberingRule(BaseRule):
 
         for heading in pdf.headings:
             stripped = heading.text.strip()
+            if _CHAPTER_HEADING_RE.match(stripped):
+                num = stripped.split()[0]
+                if not any(h[0] == num for h in numbered_headings):
+                    numbered_headings.append((num, heading.page_number))
+                continue
             missing_dot_match = _SECTION_NUMBER_MISSING_DOT_RE.match(stripped)
             if missing_dot_match:
                 issues.append(
