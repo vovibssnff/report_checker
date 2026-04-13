@@ -1,4 +1,7 @@
 {% if caddy_domain | default('') | length > 0 %}
+{% if edge_tls_terminated | bool %}
+:80 {
+{% else %}
 {% if caddy_tls_email | default('') | length > 0 %}
 {
 	email {{ caddy_tls_email }}
@@ -6,6 +9,7 @@
 {% endif %}
 
 {{ caddy_domain }} {
+{% endif %}
 {% else %}
 {
 	default_sni {{ ansible_host }}
@@ -38,7 +42,7 @@ https://{{ ansible_host }} {
 
 	# Serve frontend for all non-API routes, including "/".
 	handle {
-		reverse_proxy frontend:5173
+		reverse_proxy frontend:80
 	}
 }
 

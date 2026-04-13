@@ -18,3 +18,9 @@ vault_auth_mode: dev
 vault_itmo_id_client_id: ""
 vault_itmo_id_client_secret: ""
 vault_itmo_id_redirect_uri: ""
+
+# Optional public domain overrides
+vault_base_domain: ""
+vault_caddy_domain_override: ""
+vault_caddy_tls_email: ""
+vault_edge_tls_terminated: false
