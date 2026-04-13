@@ -23,7 +23,7 @@ https://{{ ansible_host }} {
 		max_size {{ max_file_size_mb + 5 }}MB
 	}
 
-	@backend path /api/* /docs* /openapi.json /health
+	@backend path /api/* /internal/* /docs* /openapi.json /health
 	handle @backend {
 		reverse_proxy backend:8000
 	}
