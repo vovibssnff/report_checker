@@ -54,10 +54,22 @@ async def auth_mode() -> dict[str, str]:
 
 @router.get("/callback")
 async def callback(
-    code: str,
-    state: str,
+    code: str | None = None,
+    state: str | None = None,
+    error: str | None = None,
+    error_description: str | None = None,
     auth_service: AuthUseCase = Depends(get_auth_service),
 ) -> RedirectResponse:
+    if error:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"OAuth error: {error} — {error_description or 'unknown'}",
+        )
+    if not code or not state:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing code or state parameter",
+        )
     user = await auth_service.handle_oauth_callback(code, state)
     token = _create_session_token(str(user.id))
     response = RedirectResponse(url="/", status_code=status.HTTP_302_FOUND)

@@ -23,10 +23,10 @@ https://{{ ansible_host }} {
 		max_size {{ max_file_size_mb + 5 }}MB
 	}
 
-	@backend path /api/* /internal/* /docs* /openapi.json /health
-	handle @backend {
-		reverse_proxy backend:8000
-	}
+	reverse_proxy /api/* backend:8000
+	reverse_proxy /docs* backend:8000
+	reverse_proxy /openapi.json backend:8000
+	reverse_proxy /health backend:8000
 
 	# MinIO API behind path prefix.
 	handle_path /s3/* {
