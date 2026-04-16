@@ -78,3 +78,9 @@ async def test_logout_clears_cookie(auth_client: httpx.AsyncClient):
     set_cookie = resp.headers.get("set-cookie", "")
     assert "access_token" in set_cookie
     assert "Max-Age=0" in set_cookie or '="";' in set_cookie or "expires=" in set_cookie.lower()
+
+
+async def test_auth_mode_returns_dev(client: httpx.AsyncClient):
+    resp = await client.get("/api/v1/auth/mode")
+    assert resp.status_code == 200
+    assert resp.json()["mode"] == "dev"

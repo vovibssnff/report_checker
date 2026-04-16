@@ -17,8 +17,9 @@ export interface MarginIssue {
 export interface ReportCheckItem {
   label: string;
   status: ReportCheckStatus;
-  detail?: string;
+  messageKey?: string;
   detailParams?: Record<string, string | number>;
+  detail?: string;
   richDetail?: RichDetail;
   highlights?: TextHighlight[];
   chipHighlights?: TextHighlight[];
@@ -30,7 +31,8 @@ export type RichDetail =
   | { type: 'counter'; found: number; required: number; unit?: string }
   | { type: 'sections'; missing: string[] }
   | { type: 'stages'; missing: number[] }
-  | { type: 'margins'; violations: { page: number; issues: MarginIssue[] }[] };
+  | { type: 'margins'; violations: { page: number; issues: MarginIssue[] }[] }
+  | { type: 'bullets'; items: string[] };
 
 export interface ReportSection {
   title: string;

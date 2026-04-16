@@ -3,7 +3,7 @@ app_name: report-checker
 app_deploy_path: /opt/report-checker
 
 app_repo_url: "{{ vault_repo_url }}"
-app_repo_branch: master
+app_repo_branch: sync-checks
 
 app_env: prod
 app_log_level: INFO
@@ -22,7 +22,8 @@ document_retention_days: 365
 
 auth_mode: "{{ vault_auth_mode }}"
 
-caddy_tls_email: ""
+caddy_tls_email: "{{ vault_caddy_tls_email | default('') }}"
+edge_tls_terminated: "{{ vault_edge_tls_terminated | default(false) }}"
 
 # Single source of truth for public DNS names.
 # Example:
@@ -31,10 +32,10 @@ caddy_tls_email: ""
 #   caddy_domain: app.example.com
 #   minio_server_url: https://app.example.com/s3
 #   minio_browser_redirect_url: https://app.example.com/minio-console
-base_domain: ""
+base_domain: "{{ vault_base_domain | default('') }}"
 
 # Optional explicit overrides.
-caddy_domain_override: ""
+caddy_domain_override: "{{ vault_caddy_domain_override | default('') }}"
 
 caddy_domain: >-
   {{

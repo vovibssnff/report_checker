@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import TYPE_CHECKING
 
-from sqlalchemy import select
+from sqlalchemy import case, select
 from sqlalchemy.dialects.postgresql import insert
 
 from app.adapters.driven.persistence.database.models.check_rule import CheckRuleModel
@@ -38,7 +38,7 @@ class PgCheckRuleRepository(CheckRuleRepository):
                 "document_type": r.document_type.value,
                 "name": r.name,
                 "description": r.description or "",
-                "enabled": True,
+                "enabled": r.document_type != DocumentType.VKR_TEMPLATE,
                 "config": None,
             }
             for r in rules
@@ -50,7 +50,10 @@ class PgCheckRuleRepository(CheckRuleRepository):
                 "document_type": stmt.excluded.document_type,
                 "name": stmt.excluded.name,
                 "description": stmt.excluded.description,
-                "enabled": CheckRuleModel.enabled,
+                "enabled": case(
+                    (stmt.excluded.document_type == DocumentType.VKR_TEMPLATE.value, False),
+                    else_=CheckRuleModel.enabled,
+                ),
                 "config": CheckRuleModel.config,
             },
         )

@@ -64,12 +64,25 @@ async def upload_documents(
     query_service: DocumentQueryUseCase = Depends(get_query_service),
 ) -> list[DocumentResponse]:
     started = perf_counter()
+    try:
+        doc_type = DocumentType(document_type)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Invalid document_type: {document_type}",
+        ) from exc
+    if doc_type == DocumentType.VKR_TEMPLATE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="VKR template uploads are disabled; use practice_report",
+        )
+
     logger.info(
         "document_upload_requested %s",
         kv(user_id=user.id, files_count=len(files), document_type=document_type),
     )
     file_tuples = [(f.filename or "unknown", await f.read()) for f in files]
-    docs = await upload_service.upload_for_user(user.id, DocumentType(document_type), file_tuples)
+    docs = await upload_service.upload_for_user(user.id, doc_type, file_tuples)
     logger.info(
         "document_upload_completed %s",
         kv(user_id=user.id, uploaded_count=len(docs), document_type=document_type),

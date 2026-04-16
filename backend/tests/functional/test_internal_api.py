@@ -95,6 +95,6 @@ async def test_internal_upload_no_auth_required(client: httpx.AsyncClient, check
     resp = await client.post(
         "/internal/documents/",
         files={"files": ("noauth.pdf", FAKE_PDF, "application/pdf")},
-        data={"document_type": "vkr_template", "source": "api"},
+        data={"document_type": "practice_report", "source": "api"},
     )
     assert resp.status_code == 200

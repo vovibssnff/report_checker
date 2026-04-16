@@ -164,6 +164,9 @@
         "appendices": {
           "labeling": "Appendix labeling"
         },
+        "enumerations": {
+          "format": "Lists and enumerations"
+        },
         "figures": {
           "caption_format": "Figure captions",
           "numbering": "Figure numbering"
@@ -181,23 +184,60 @@
         "tables": {
           "caption_format": "Table captions",
           "numbering": "Table numbering"
+        },
+        "title_page": {
+          "content": "Title page"
         }
       },
       "practice": {
+        "appendices": {
+          "labeling": "Appendix labeling"
+        },
         "content": {
           "min_pages": "Minimum page count"
+        },
+        "enumerations": {
+          "format": "Lists and enumerations"
+        },
+        "figures": {
+          "caption_format": "Figure captions",
+          "numbering": "Figure numbering"
         },
         "formatting": {
           "page_size": "Page size",
           "margins": "Page margins",
           "font_family": "Main font",
           "font_size": "Font size",
-          "line_spacing": "Line spacing"
+          "line_spacing": "Line spacing",
+          "paragraph_indent": "Paragraph indent",
+          "alignment": "Text alignment"
+        },
+        "formulas": {
+          "numbering": "Formula numbering"
+        },
+        "headings": {
+          "structural_elements": "Structural elements",
+          "new_page": "New page for sections",
+          "section_numbering": "Section heading numbering"
+        },
+        "pagination": {
+          "arabic_numbers": "Page numbering (Arabic numerals)",
+          "position": "Page number position"
         },
         "structure": {
           "required_sections": "Required sections",
           "stage_descriptions": "Practice stage descriptions",
           "screenshots": "Screenshots"
+        },
+        "tables": {
+          "caption_format": "Table captions",
+          "numbering": "Table numbering"
+        },
+        "title_page": {
+          "content": "Title page"
+        },
+        "toc": {
+          "content": "Table of contents"
         }
       }
     },
@@ -209,6 +249,7 @@
       "font_mismatch": "Main font '{{dominant}}' instead of '{{expected}}'",
       "font_size_small": "Font size less than {{min_size}}pt",
       "font_ok": "Font meets requirements",
+      "bold_in_body": "Bold formatting found in the body text",
       "line_spacing_mismatch": "Line spacing does not match {{expected}}",
       "line_spacing_ok": "Line spacing meets requirements",
       "paragraph_indent_missing": "Paragraph indent not found",
@@ -230,6 +271,9 @@
       "required_sections_format_invalid": "Required sections were found, but some headings are formatted incorrectly",
       "required_sections_ok": "All required sections are present in correct order",
       "sections_order_invalid": "Section order is incorrect",
+      "toc_missing": "Table of contents page not found",
+      "toc_invalid": "Table of contents does not meet requirements",
+      "toc_ok": "Table of contents is valid",
       "references_ok": "References list is present",
       "references_missing": "References list not found",
       "figure_caption_invalid": "Invalid figure caption format ({{count}} items)",
@@ -254,10 +298,16 @@
       "screenshots_ok": "Found {{found}} images",
       "min_pages_insufficient": "Page count ({{page_count}}) is below minimum ({{min_pages}})",
       "min_pages_ok": "Page count ({{page_count}}) meets requirements",
+      "enumerations_ok": "Lists and enumerations are formatted correctly",
+      "enumerations_invalid": "List/enumeration formatting violations",
+      "title_page_content_ok": "Title page content meets requirements",
+      "title_page_content_invalid": "Title page content does not meet requirements (work type or year)",
       "font_size_tooltip": "Small font size ({{size}}pt)"
     },
     "issues": {
+      "section_wrong_order_pdf": "In the PDF, section «{{later}}» appears before «{{earlier}}»; required order: «{{earlier}}» then «{{later}}».",
       "not_uppercase": "not in uppercase",
+      "not_bold": "not bold",
       "not_centered": "not centered",
       "not_right_aligned": "not right-aligned",
       "wrong_number": "Numbering broken: {{number}} (p. {{page}})",
@@ -265,7 +315,14 @@
       "missing_dot_after_number": "A dot is required after section number: {{number}} (p. {{page}})",
       "invalid_label": "Invalid letter: {{label}}",
       "wrong_order": "Expected '{{expected}}', found '{{found}}'",
-      "section_before_after": "'{{before}}' found after '{{after}}'"
+      "section_before_after": "'{{before}}' found after '{{after}}'",
+      "toc_entries_missing": "TOC lines with page numbers were not detected",
+      "toc_dotted_leaders_missing": "No dotted leaders between title and page number in TOC",
+      "toc_titles_mismatch": "First TOC entries do not match headings extracted from the PDF",
+      "invalid_work_type": "Incorrect work type on the title page",
+      "year_not_current": "The title page must include calendar year {{current_year}}",
+      "tab_after_marker": "A tab was used after the list marker instead of a space",
+      "invalid_russian_letter_marker": "Invalid letter in a numbered list marker"
     },
     "marginSides": {
       "left": "left",

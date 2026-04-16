@@ -33,12 +33,25 @@ class FigureCaptionFormatRule(BaseRule):
                 mention = _FIGURE_MENTION.search(text)
                 if not mention:
                     continue
+                issues: list[str] = []
                 if not _FIGURE_PATTERN.search(text):
+                    issues.append("format")
+                if text.rstrip().endswith("."):
+                    issues.append("caption_ends_with_period")
+                page_center = (page.width_mm / (1 / 2.835)) / 2
+                block_center = (block.bbox[0] + block.bbox[2]) / 2
+                if abs(block_center - page_center) > 30:
+                    issues.append("not_centered")
+                has_image_above = any(img.bbox[3] <= block.bbox[1] for img in page.images)
+                if not has_image_above:
+                    issues.append("caption_not_below_image")
+                if issues:
                     x0, top, x1, bottom = block.bbox
                     bad_captions.append(
                         {
                             "page": page.number,
                             "text": text,
+                            "issues": issues,
                             "location": {
                                 "x0": round(x0, 2),
                                 "y0": round(top, 2),

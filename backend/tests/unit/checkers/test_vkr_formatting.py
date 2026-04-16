@@ -6,6 +6,8 @@ from app.checkers.pdf_parser import ParsedPage, TableInfo
 from app.checkers.plugins.vkr_template.formatting import AlignmentRule, FontRule, PageSizeRule, ParagraphIndentRule
 from app.core.domain.value_objects import CheckStatus
 
+pytest.skip("VKR reports are disabled in this deployment", allow_module_level=True)
+
 
 class TestPageSizeRule:
     @pytest.fixture()

@@ -8,4 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    // App is served behind reverse proxies in deployment.
+    // Allow incoming Host headers from edge and internal domains.
+    allowedHosts: true,
+  },
 })

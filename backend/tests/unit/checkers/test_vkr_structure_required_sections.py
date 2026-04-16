@@ -5,6 +5,8 @@ import pytest
 from app.checkers.plugins.vkr_template.structure import RequiredSectionsRule
 from app.core.domain.value_objects import CheckStatus
 
+pytest.skip("VKR reports are disabled in this deployment", allow_module_level=True)
+
 
 class TestRequiredSectionsRule:
     @pytest.fixture()

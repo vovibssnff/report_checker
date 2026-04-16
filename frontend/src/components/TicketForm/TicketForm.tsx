@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { observer } from 'mobx-react-lite';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { Search, ChevronDown, ArrowLeft, X } from 'lucide-react';
+import { Search, ArrowLeft, X } from 'lucide-react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Button from '../Button/Button';
 import CrossIcon from '../icons/CrossIcon/CrossIcon';
@@ -11,7 +10,7 @@ import ItemCard from '../ItemCard/ItemCard';
 import DocumentDetailModal from '../DocumentDetailModal/DocumentDetailModal';
 import { ConfirmDialog } from '../ui/confirm-dialog';
 import { Spinner } from '../ui/spinner';
-import type { DocumentItem, DocumentStatus, DocType } from '../../types/document';
+import type { DocumentItem, DocumentStatus } from '../../types/document';
 import { documentsStore } from '../../store/documentsStore';
 
 const PDF_ACCEPT = '.pdf,application/pdf';
@@ -73,14 +72,11 @@ function countByStatus(cards: DocumentItem[]) {
   return { passed, failed, warnings };
 }
 
-type DocTypeFilter = 'all' | DocType;
-
 function applyFilters(
   cards: DocumentItem[],
   readiness: ReadinessFilter,
   status: StatusFilter,
   authorQuery: string,
-  docTypeFilter: DocTypeFilter,
 ): DocumentItem[] {
   const q = authorQuery.trim().toLowerCase();
   return cards.filter((c) => {
@@ -88,7 +84,6 @@ function applyFilters(
     if (readiness === 'pending' && c.status !== 'pending') return false;
     if (status !== 'all' && c.status !== status) return false;
     if (q && !c.author.toLowerCase().includes(q)) return false;
-    if (docTypeFilter !== 'all' && c.docType !== docTypeFilter) return false;
     return true;
   });
 }
@@ -144,11 +139,6 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
   const [readinessFilter, setReadinessFilter] = useState<ReadinessFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [authorSearch, setAuthorSearch] = useState('');
-  const [docTypeFilter, setDocTypeFilter] = useState<DocTypeFilter>('all');
-  const [docTypeOpen, setDocTypeOpen] = useState(false);
-  const docTypeRef = useRef<HTMLDivElement>(null);
-  const docTypeMenuRef = useRef<HTMLDivElement>(null);
-  const [docTypeMenuPos, setDocTypeMenuPos] = useState<{ left: number; top: number } | null>(null);
   const [selectedCard, setSelectedCard] = useState<DocumentItem | null>(null);
   const [transitionStartRect, setTransitionStartRect] = useState<{ left: number; top: number; width: number; height: number } | null>(null);
   const [transitionPreviewImage, setTransitionPreviewImage] = useState<string | null>(null);
@@ -203,48 +193,12 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
   };
 
   useEffect(() => {
-    if (!docTypeOpen) return;
-    function handler(e: MouseEvent) {
-      const target = e.target as Node;
-      if (
-        !docTypeRef.current?.contains(target) &&
-        !docTypeMenuRef.current?.contains(target)
-      ) {
-        setDocTypeOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [docTypeOpen]);
-
-  useEffect(() => {
-    if (!docTypeOpen) return;
-
-    const updateMenuPos = () => {
-      const trigger = docTypeRef.current;
-      if (!trigger) return;
-      const rect = trigger.getBoundingClientRect();
-      setDocTypeMenuPos({ left: rect.right, top: rect.top - 6 });
-    };
-
-    updateMenuPos();
-    window.addEventListener('resize', updateMenuPos);
-    window.addEventListener('scroll', updateMenuPos, true);
-    return () => {
-      window.removeEventListener('resize', updateMenuPos);
-      window.removeEventListener('scroll', updateMenuPos, true);
-    };
-  }, [docTypeOpen, currentStep]);
-
-  useEffect(() => {
-    const backendDocumentType =
-      docTypeFilter === 'bachelors' ? 'practice_report' : docTypeFilter === 'masters' ? 'vkr_template' : undefined;
-    documentsStore.loadDocuments({ backendDocumentType });
-  }, [docTypeFilter]);
+    documentsStore.loadDocuments({ backendDocumentType: 'practice_report' });
+  }, []);
 
   const readinessCounts = countByReadiness(documentsStore.documents);
   const statusCounts = countByStatus(documentsStore.documents);
-  const filteredCards = applyFilters(documentsStore.documents, readinessFilter, statusFilter, authorSearch, docTypeFilter);
+  const filteredCards = applyFilters(documentsStore.documents, readinessFilter, statusFilter, authorSearch);
 
   const uploading = documentsStore.uploading;
 
@@ -331,9 +285,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
     e.preventDefault();
     if (!selectedFile || uploading) return;
     try {
-      const backendDocumentType =
-        docTypeFilter === 'bachelors' ? 'practice_report' : 'vkr_template';
-      await documentsStore.uploadDocument(selectedFile, backendDocumentType);
+      await documentsStore.uploadDocument(selectedFile, 'practice_report');
       setSelectedFile(null);
       setCurrentStep(0);
     } catch {
@@ -376,7 +328,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                 <div className="relative flex-1 pb-20 no-scrollbar">
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={`${readinessFilter}-${statusFilter}-${docTypeFilter}-${authorSearch}`}
+                      key={`${readinessFilter}-${statusFilter}-${authorSearch}`}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
@@ -531,7 +483,7 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
               style={{ pointerEvents: currentStep === 0 ? 'auto' : 'none' }}
             >
               <div className="flex flex-row gap-2 w-[360px]">
-                <div className="relative w-[220px]">
+                <div className="relative w-full min-w-0">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-400 pointer-events-none" />
                   <input
                     type="text"
@@ -540,16 +492,6 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
                     placeholder={t('documents.searchByAuthor')}
                     className="w-full h-9 pl-9 pr-3 text-sm rounded-full bg-white outline-none placeholder:text-gray-400 transition-colors"
                   />
-                </div>
-                <div className="relative shrink-0" ref={docTypeRef}>
-                  <button
-                    type="button"
-                    onClick={() => setDocTypeOpen((v) => !v)}
-                    className="h-9 pr-3 pl-4 flex items-center gap-1.5 text-sm rounded-full bg-white transition-colors whitespace-nowrap"
-                  >
-                    {docTypeFilter === 'all' ? t('documents.docTypeAll') : t(`documents.${docTypeFilter}`)}
-                    <ChevronDown className={`size-3.5 text-gray-500 transition-transform ${docTypeOpen ? 'rotate-180' : ''}`} />
-                  </button>
                 </div>
               </div>
             </motion.div>
@@ -579,42 +521,6 @@ const TicketForm: React.FC<TicketFormProps> = observer((props) => {
           </motion.div>
         </div>
       </form>
-      {createPortal(
-        <AnimatePresence>
-          {docTypeOpen && docTypeMenuPos && (
-            <div
-              ref={docTypeMenuRef}
-              className="fixed z-[1000]"
-              style={{
-                left: docTypeMenuPos.left,
-                top: docTypeMenuPos.top,
-                transform: 'translate(-100%, -100%)',
-              }}
-            >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.1 }}
-                className="bg-white rounded-xl shadow-lg border border-[rgba(0,0,0,0.06)] py-1.5 min-w-[160px]"
-                style={{ transformOrigin: 'bottom right' }}
-              >
-                {(['all', 'masters', 'bachelors'] as const).map((opt) => (
-                  <button
-                    key={opt}
-                    type="button"
-                    onClick={() => { setDocTypeFilter(opt); setDocTypeOpen(false); }}
-                    className={`w-full text-left px-4 py-2 text-sm transition-colors hover:bg-[rgba(0,0,0,0.04)] ${docTypeFilter === opt ? 'font-medium' : ''}`}
-                  >
-                    {opt === 'all' ? t('documents.docTypeAll') : t(`documents.${opt}`)}
-                  </button>
-                ))}
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>,
-        document.body
-      )}
       <DocumentDetailModal
         open={selectedCard !== null}
         onClose={handleCloseModal}

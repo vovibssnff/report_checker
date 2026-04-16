@@ -19,35 +19,7 @@ function getRuleLabelKey(cr: BackendCheckResultResponse): string {
     return `report.ruleLabels.${prefix}.formatting.font_family`;
   }
 
-  const knownKeys = new Set([
-    'vkr.headings.structural_elements',
-    'vkr.headings.new_page',
-    'vkr.headings.section_numbering',
-    'vkr.structure.required_sections',
-    'vkr.formatting.page_size',
-    'vkr.formatting.margins',
-    'vkr.formatting.line_spacing',
-    'vkr.formatting.paragraph_indent',
-    'vkr.formatting.alignment',
-    'vkr.appendices.labeling',
-    'vkr.figures.caption_format',
-    'vkr.figures.numbering',
-    'vkr.formulas.numbering',
-    'vkr.pagination.arabic_numbers',
-    'vkr.pagination.position',
-    'vkr.references.presence',
-    'vkr.tables.caption_format',
-    'vkr.tables.numbering',
-    'practice.content.min_pages',
-    'practice.formatting.page_size',
-    'practice.formatting.margins',
-    'practice.formatting.line_spacing',
-    'practice.structure.required_sections',
-    'practice.structure.stage_descriptions',
-    'practice.structure.screenshots',
-  ]);
-
-  if (knownKeys.has(cr.rule_code)) {
+  if (cr.rule_code.startsWith('vkr.') || cr.rule_code.startsWith('practice.')) {
     return `report.ruleLabels.${cr.rule_code}`;
   }
 
@@ -63,7 +35,7 @@ function mapRuleToSection(ruleCode: string): 'structure' | 'formatting' | 'conte
   return 'content';
 }
 
-function translateMessage(cr: BackendCheckResultResponse): string {
+function getMessageInterpolationParams(cr: BackendCheckResultResponse): Record<string, unknown> {
   const d = cr.details ?? {};
   const params: Record<string, unknown> = {};
 
@@ -76,31 +48,43 @@ function translateMessage(cr: BackendCheckResultResponse): string {
   if (d.min_pages != null) params.min_pages = d.min_pages;
   if (d.found != null) params.found = d.found;
   if (d.required != null) params.required = d.required;
+  if (d.current_year != null) params.current_year = d.current_year;
 
+  return params;
+}
+
+function detailParamsForItem(cr: BackendCheckResultResponse): Record<string, string | number> | undefined {
+  const raw = getMessageInterpolationParams(cr);
+  const out: Record<string, string | number> = {};
+  for (const [k, v] of Object.entries(raw)) {
+    if (typeof v === 'string' || typeof v === 'number') out[k] = v;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** Human-readable check message (PDF tooltips, chips). Uses react-i18next resources. */
+export function formatReportCheckMessage(cr: BackendCheckResultResponse): string {
   const key = `report.messages.${cr.message}`;
-  const translated = t(key, params);
-  return translated !== key ? translated : cr.message;
+  const params = getMessageInterpolationParams(cr);
+  return String(i18n.t(key, { ...params, defaultValue: cr.message }));
 }
 
 function translateIssue(issue: string | Record<string, unknown>): string {
   if (typeof issue === 'string') {
     const key = `report.issues.${issue}`;
-    const translated = t(key);
-    return translated !== key ? translated : issue;
+    return String(t(key, { defaultValue: issue }));
   }
   if (typeof issue === 'object' && issue !== null && 'type' in issue) {
     const issueType = issue.type as string;
     const key = `report.issues.${issueType}`;
-    const translated = t(key, issue as Record<string, unknown>);
-    return translated !== key ? translated : JSON.stringify(issue);
+    return String(t(key, { ...(issue as Record<string, unknown>), defaultValue: JSON.stringify(issue) }));
   }
   return String(issue);
 }
 
 function translateSection(code: string): string {
   const key = `report.sections.${code}`;
-  const translated = t(key);
-  return translated !== key ? translated : code;
+  return String(t(key, { defaultValue: code }));
 }
 
 const MARGIN_SIDE_MAP: Record<string, string> = {
@@ -145,6 +129,43 @@ function extractRichDetail(cr: BackendCheckResultResponse): RichDetail | undefin
 
   if ('missing_stages' in d && Array.isArray(d.missing_stages)) {
     return { type: 'stages', missing: d.missing_stages as number[] };
+  }
+
+  if ('order_violations' in d && Array.isArray(d.order_violations)) {
+    const ov = d.order_violations as { before: string; after: string }[];
+    const items = ov.map((o) =>
+      t('report.issues.section_wrong_order_pdf', {
+        earlier: translateSection(o.before),
+        later: translateSection(o.after),
+      }),
+    );
+    return { type: 'bullets', items };
+  }
+
+  if ('issues' in d && Array.isArray(d.issues) && cr.message === 'toc_invalid') {
+    const items = (d.issues as string[]).map((issue) => translateIssue(issue));
+    return { type: 'bullets', items };
+  }
+
+  if ('issues' in d && Array.isArray(d.issues) && cr.message === 'title_page_content_invalid') {
+    const cy = d.current_year as number | undefined;
+    const items = (d.issues as string[]).map((issue) => {
+      if (issue === 'year_not_current' && cy != null) {
+        const key = 'report.issues.year_not_current';
+        return String(t(key, { current_year: cy, defaultValue: issue }));
+      }
+      return translateIssue(issue);
+    });
+    return { type: 'bullets', items };
+  }
+
+  if ('issues' in d && Array.isArray(d.issues) && cr.message === 'enumerations_invalid') {
+    const items = (d.issues as { page: number; line?: string; issue: string }[]).map((row) => {
+      const issueKey = `report.issues.${row.issue}`;
+      const desc = String(t(issueKey, { defaultValue: row.issue }));
+      return `${String(t('report.richDetail.page', { defaultValue: 'p.' }))} ${row.page}: ${desc}`;
+    });
+    return { type: 'bullets', items };
   }
 
   if ('violations' in d && Array.isArray(d.violations) && (cr.rule_code.includes('.margins') || cr.rule_code.includes('.formatting.margins'))) {
@@ -200,7 +221,7 @@ function extractHighlights(cr: BackendCheckResultResponse): TextHighlight[] | un
   if (!d) return undefined;
 
   const highlights: TextHighlight[] = [];
-  const msg = translateMessage(cr);
+  const msg = formatReportCheckMessage(cr);
 
   if (Array.isArray(d.bad_captions)) {
     pushLocations(d.bad_captions as LocationEntry[], msg, highlights);
@@ -208,7 +229,11 @@ function extractHighlights(cr: BackendCheckResultResponse): TextHighlight[] | un
 
   if (Array.isArray(d.locations)) {
     pushLocations(d.locations as LocationEntry[], msg, highlights, (entry) => {
-      if (entry.font_size != null) return t('report.messages.font_size_tooltip', { size: entry.font_size });
+      if (entry.font_size != null) {
+        return String(
+          t('report.messages.font_size_tooltip', { size: entry.font_size, defaultValue: 'font_size_tooltip' }),
+        );
+      }
       return msg;
     });
   }
@@ -231,7 +256,7 @@ function extractChipHighlights(cr: BackendCheckResultResponse): TextHighlight[] 
   if (!d) return undefined;
 
   const highlights: TextHighlight[] = [];
-  const msg = translateMessage(cr);
+  const msg = formatReportCheckMessage(cr);
 
   if (Array.isArray(d.bad_captions)) {
     for (const entry of d.bad_captions as LocationEntry[]) {
@@ -264,7 +289,8 @@ function buildSection(title: string, checkResults: BackendCheckResultResponse[])
   const items: ReportCheckItem[] = checkResults.map((cr) => ({
     label: getRuleLabelKey(cr),
     status: mapCheckStatus(cr),
-    detail: translateMessage(cr),
+    messageKey: cr.message,
+    detailParams: detailParamsForItem(cr),
     richDetail: extractRichDetail(cr),
     highlights: extractHighlights(cr),
     chipHighlights: extractChipHighlights(cr),

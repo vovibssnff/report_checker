@@ -19,6 +19,7 @@ def make_text_block():
         is_bold: bool = False,
         is_italic: bool = False,
         bbox: tuple[float, float, float, float] = (85.0, 100.0, 510.0, 114.0),
+        color: tuple[float, ...] | None = None,
     ) -> TextBlock:
         return TextBlock(
             text=text,
@@ -27,6 +28,7 @@ def make_text_block():
             is_bold=is_bold,
             is_italic=is_italic,
             bbox=bbox,
+            color=color,
         )
 
     return _factory

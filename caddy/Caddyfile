@@ -20,6 +20,8 @@ localhost {
 	}
 	redir /minio-console /minio-console/ permanent
 
-	# Default: serve the frontend app.
-	reverse_proxy frontend:5173
+	# Serve frontend for all non-API routes, including "/".
+	handle {
+		reverse_proxy frontend:80
+	}
 }

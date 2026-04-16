@@ -1,4 +1,7 @@
 {% if caddy_domain | default('') | length > 0 %}
+{% if edge_tls_terminated | bool %}
+:80 {
+{% else %}
 {% if caddy_tls_email | default('') | length > 0 %}
 {
 	email {{ caddy_tls_email }}
@@ -6,6 +9,7 @@
 {% endif %}
 
 {{ caddy_domain }} {
+{% endif %}
 {% else %}
 {
 	default_sni {{ ansible_host }}
@@ -19,10 +23,10 @@ https://{{ ansible_host }} {
 		max_size {{ max_file_size_mb + 5 }}MB
 	}
 
-	@backend path /api/* /docs* /openapi.json /health
-	handle @backend {
-		reverse_proxy backend:8000
-	}
+	reverse_proxy /api/* backend:8000
+	reverse_proxy /docs* backend:8000
+	reverse_proxy /openapi.json backend:8000
+	reverse_proxy /health backend:8000
 
 	# MinIO API behind path prefix.
 	handle_path /s3/* {
@@ -38,7 +42,7 @@ https://{{ ansible_host }} {
 
 	# Serve frontend for all non-API routes, including "/".
 	handle {
-		reverse_proxy frontend:5173
+		reverse_proxy frontend:80
 	}
 }
 

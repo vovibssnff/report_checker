@@ -34,14 +34,26 @@ def _looks_like_formula_prefix(prefix: str) -> bool:
 class FormulaNumberingRule(BaseRule):
     async def check(self, pdf: ParsedPDF, config: dict[str, Any]) -> list[RuleResult]:
         numbers: list[int] = []
+        misaligned_numbers: list[dict[str, Any]] = []
 
         for page in pdf.pages:
+            page_w_pt = page.width_mm / (1 / 2.835)
             for line in page.lines:
                 match = _FORMULA_NUMBER.search(line)
                 if match:
                     prefix = line[: match.start()]
                     if not _looks_like_formula_prefix(prefix):
                         continue
+                    expected_number = match.group(0)
+                    matching_block = next((tb for tb in page.text_blocks if expected_number in tb.text), None)
+                    if matching_block is not None and (page_w_pt - matching_block.bbox[2]) > 45:
+                        misaligned_numbers.append(
+                            {
+                                "page": page.number,
+                                "number": expected_number,
+                                "right_offset": round(page_w_pt - matching_block.bbox[2], 2),
+                            }
+                        )
                     parts = match.group(1).split(".")
                     numbers.append(int(parts[-1]))
 
@@ -64,6 +76,14 @@ class FormulaNumberingRule(BaseRule):
                     status=CheckStatus.FAILED,
                     message="formula_numbering_invalid",
                     details={"found_numbers": numbers, "gaps_at": gaps},
+                )
+            ]
+        if misaligned_numbers:
+            return [
+                RuleResult(
+                    status=CheckStatus.FAILED,
+                    message="formula_numbering_not_right_aligned",
+                    details={"issues": misaligned_numbers},
                 )
             ]
         return [
