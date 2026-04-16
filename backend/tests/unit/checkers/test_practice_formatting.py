@@ -76,3 +76,57 @@ async def test_practice_alignment_skips_title_page(make_text_block, make_parsed_
     )
     results = await AlignmentRule().check(make_parsed_pdf(pages=[page]), {})
     assert results[0].status == CheckStatus.PASSED
+
+
+@pytest.mark.asyncio
+async def test_practice_alignment_skips_short_line_before_paragraph_gap(
+    make_text_block, make_parsed_page, make_parsed_pdf
+):
+    long_line = "Текст " * 12
+    blocks = [
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 100.0, 510.0, 114.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 116.0, 510.0, 130.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 132.0, 380.0, 146.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 200.0, 510.0, 214.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 216.0, 510.0, 230.0)),
+    ]
+    page = make_parsed_page(lines=[], text_blocks=blocks)
+    results = await AlignmentRule().check(make_parsed_pdf(pages=[page]), {})
+    assert results[0].status == CheckStatus.PASSED
+    assert results[0].message == "alignment_ok"
+
+
+@pytest.mark.asyncio
+async def test_practice_alignment_fails_when_body_lines_not_justified(
+    make_text_block, make_parsed_page, make_parsed_pdf
+):
+    long_line = "Строка " * 12
+    blocks = [
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 100.0, 360.0, 114.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 116.0, 360.0, 130.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 132.0, 360.0, 146.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 148.0, 510.0, 162.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 164.0, 510.0, 178.0)),
+    ]
+    page = make_parsed_page(lines=[], text_blocks=blocks)
+    results = await AlignmentRule().check(make_parsed_pdf(pages=[page]), {})
+    assert results[0].status == CheckStatus.FAILED
+    assert results[0].message == "alignment_invalid"
+
+
+@pytest.mark.asyncio
+async def test_practice_alignment_ignores_single_outlier_long_right_edge(
+    make_text_block, make_parsed_page, make_parsed_pdf
+):
+    """One stretched line must not make all other justified lines look misaligned."""
+    long_line = "Текст " * 12
+    blocks = [
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 100.0, 510.0, 114.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 116.0, 510.0, 130.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 132.0, 510.0, 146.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 148.0, 540.0, 162.0)),
+        make_text_block(text=long_line, is_bold=False, bbox=(85.0, 164.0, 510.0, 178.0)),
+    ]
+    page = make_parsed_page(lines=[], text_blocks=blocks)
+    results = await AlignmentRule().check(make_parsed_pdf(pages=[page]), {})
+    assert results[0].status == CheckStatus.PASSED

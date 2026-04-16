@@ -6,7 +6,7 @@ import { X, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/TextLayer.css';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
-import type { DocumentReport, ReportCheckStatus, TextHighlight } from '../../types/documentReport';
+import type { DocumentReport, ReportCheckItem, ReportCheckStatus, TextHighlight } from '../../types/documentReport';
 import { getDocument } from '../../api/documentApi';
 import { Spinner } from '../ui/spinner';
 import { mapCheckResultsToDocumentReport } from '../../utils/mapCheckResultsToDocumentReport';
@@ -491,6 +491,21 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
 
   }, [numPages]);
 
+  const resolveCheckItemMessage = useCallback(
+    (item: ReportCheckItem) => {
+      if (item.messageKey != null && item.messageKey !== '') {
+        return String(
+          t(`report.messages.${item.messageKey}`, {
+            defaultValue: item.messageKey,
+            ...(item.detailParams ?? {}),
+          }),
+        );
+      }
+      return item.detail ?? '';
+    },
+    [t],
+  );
+
   const startRect = props.transitionStartRect ?? null;
   const showFlyout = isTransitioning && startRect && !revealPreviewBeforeUnmount;
   const reportToShow = computedReport ?? props.report;
@@ -789,24 +804,26 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                         </div>
                         <div className="overflow-hidden">
                           <ul className="divide-y divide-black/6">
-                            {section.items.map((item, i) => (
+                            {section.items.map((item, i) => {
+                              const itemMessage = resolveCheckItemMessage(item);
+                              return (
                               <li key={i} className="py-3 flex flex-col gap-1.5">
                                 <div className="flex items-center gap-2">
                                   <ReportIcon status={item.status} />
                                   <span className="text-sm">{typeof item.label === 'string' && item.label.startsWith('report.') ? t(item.label) : item.label}</span>
                                 </div>
-                                {item.detail && (() => {
-                                  const cleaned = stripRedundantTail(item.detail, item.richDetail);
+                                {itemMessage ? (() => {
+                                  const cleaned = stripRedundantTail(itemMessage, item.richDetail);
                                   return cleaned ? (
                                     <span className="text-sm text-gray-500 pl-5.5">{cleaned}</span>
                                   ) : null;
-                                })()}
+                                })() : null}
                                 {item.richDetail && (
                                   <div className="pl-5.5 mt-0.5">
                                     <RichDetailView
                                       detail={item.richDetail}
                                       onGoToPage={hasPdf ? goToPage : undefined}
-                                      tooltip={item.detail ? stripRedundantTail(item.detail, item.richDetail) : undefined}
+                                      tooltip={itemMessage ? stripRedundantTail(itemMessage, item.richDetail) : undefined}
                                       highlights={item.chipHighlights}
                                       pdfHighlights={item.highlights}
                                       pdfFile={pdfObjectUrl ?? fileUrl}
@@ -816,7 +833,8 @@ const DocumentDetailModal: React.FC<DocumentDetailModalProps> = (props) => {
                                   </div>
                                 )}
                               </li>
-                            ))}
+                              );
+                            })}
                           </ul>
                         </div>
                       </div>

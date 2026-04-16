@@ -4,6 +4,7 @@ import re
 from typing import TYPE_CHECKING, Any
 
 from app.checkers.base import BaseRule, RuleResult, rule
+from app.checkers.plugins.common.toc import looks_like_toc_entry_line
 from app.core.domain.value_objects import CheckStatus, DocumentType, Severity
 
 if TYPE_CHECKING:
@@ -88,6 +89,8 @@ def _section_match_score(text: str, aliases: list[str]) -> float:
 
 def _looks_like_section_heading(entry: dict[str, Any]) -> bool:
     text = entry.get("text", "")
+    if looks_like_toc_entry_line(text):
+        return False
     normalized = _normalize(text)
     tokens = normalized.split()
     if not tokens or len(tokens) > _MAX_HEADING_TOKENS:

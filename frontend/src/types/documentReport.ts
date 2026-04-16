@@ -17,8 +17,9 @@ export interface MarginIssue {
 export interface ReportCheckItem {
   label: string;
   status: ReportCheckStatus;
-  detail?: string;
+  messageKey?: string;
   detailParams?: Record<string, string | number>;
+  detail?: string;
   richDetail?: RichDetail;
   highlights?: TextHighlight[];
   chipHighlights?: TextHighlight[];

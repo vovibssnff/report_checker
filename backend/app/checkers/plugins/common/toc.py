@@ -26,6 +26,21 @@ def _strip_page_number(line: str) -> str:
     return _PAGE_NUM_TAIL_RE.sub("", line.strip()).strip()
 
 
+def looks_like_toc_entry_line(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return False
+    if _line_ends_with_page_number(stripped) and _line_has_leader_or_gap(stripped):
+        return True
+    m = _LEADER_CHARS_RE.search(stripped)
+    if not m or m.start() < 2:
+        return False
+    title_part = stripped[: m.start()].strip()
+    if not title_part or len(title_part) > 120:
+        return False
+    return True
+
+
 def _line_has_leader_or_gap(line: str) -> bool:
     """True if the line plausibly has a TOC leader before the page number.
 
